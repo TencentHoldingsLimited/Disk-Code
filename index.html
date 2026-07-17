@@ -467,6 +467,15 @@
       font-size: 1rem;
       color: var(--text);
     }
+    .media-upload-panel {
+      margin-bottom: 10px;
+      padding: 10px;
+      border: 1px dashed rgba(255,255,255,0.16);
+      border-radius: 12px;
+      background: rgba(255,255,255,0.03);
+      display: grid;
+      gap: 8px;
+    }
     .media-library {
       display: grid;
       gap: 12px;
@@ -852,6 +861,11 @@ Bình | editor"></textarea>
               <h3>Kho lưu media</h3>
               <span class="tag">Video / Ảnh / Âm thanh</span>
             </div>
+            <div class="media-upload-panel">
+              <label style="margin:0;">Tải tệp media lên</label>
+              <input id="mediaUploadInput" type="file" accept="image/*,video/*,audio/*" />
+              <button type="button" id="uploadMediaBtn" class="primary-btn">Lưu vào kho media</button>
+            </div>
             <div id="mediaLibrary" class="media-library"></div>
           </div>
         </div>
@@ -885,6 +899,8 @@ Bình | editor"></textarea>
     const contentType = document.getElementById('contentType');
     const mediaFileInput = document.getElementById('mediaFile');
     const mediaLibrary = document.getElementById('mediaLibrary');
+    const mediaUploadInput = document.getElementById('mediaUploadInput');
+    const uploadMediaBtn = document.getElementById('uploadMediaBtn');
     const commandHint = document.querySelector('.command-hint');
     const commandOverlay = document.getElementById('commandOverlay');
     const commandInput = document.getElementById('commandInput');
@@ -1711,6 +1727,52 @@ Bình | editor"></textarea>
 
       mediaLibrary.innerHTML = rendered.join('');
     }
+
+    async function uploadMediaToLibrary() {
+      if (!currentUser) {
+        alert('Vui lòng đăng nhập Google trước khi lưu media vào kho.');
+        return;
+      }
+      const file = mediaUploadInput.files[0];
+      if (!file) {
+        alert('Vui lòng chọn một tệp media để lưu.');
+        return;
+      }
+      const validation = validateMediaFile(file);
+      if (!validation.valid) {
+        alert(validation.message || 'Tệp media không hợp lệ.');
+        return;
+      }
+      const mediaId = `media-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      try {
+        await saveMediaFile(mediaId, file);
+        const newSnippet = {
+          id: Date.now().toString(),
+          title: file.name.replace(/\.[^/.]+$/, ''),
+          category: 'Media',
+          language: file.type.startsWith('video') ? 'Video' : file.type.startsWith('audio') ? 'Audio' : 'Image',
+          notes: 'Tệp media được lưu trực tiếp vào kho riêng.',
+          code: '',
+          owner: currentUser.name,
+          groupId: '',
+          type: file.type.startsWith('video') ? 'video' : file.type.startsWith('audio') ? 'audio' : 'image',
+          mediaId,
+          mediaFileName: file.name,
+          mediaMimeType: file.type
+        };
+        snippets.unshift(newSnippet);
+        saveSnippets();
+        mediaUploadInput.value = '';
+        await renderSnippets();
+        if (commandHint) {
+          commandHint.textContent = 'Đã lưu tệp media vào kho riêng thành công.';
+        }
+      } catch (error) {
+        alert(error.message || 'Không thể lưu tệp media.');
+      }
+    }
+
+    uploadMediaBtn.addEventListener('click', uploadMediaToLibrary);
 
     async function renderSnippets() {
       const term = searchInput.value.trim().toLowerCase();
