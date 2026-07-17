@@ -85,6 +85,7 @@
       -ms-user-select: none;
       user-select: none;
       -webkit-touch-callout: none;
+      -webkit-user-drag: none;
     }
 
     input, textarea, pre, code, [data-copy], .allow-copy {
@@ -92,6 +93,12 @@
       -moz-user-select: text;
       -ms-user-select: text;
       user-select: text;
+      -webkit-user-drag: auto;
+    }
+
+    *::selection {
+      background: rgba(56, 189, 248, 0.16);
+      color: var(--text);
     }
 
     body::before,
@@ -398,14 +405,35 @@
     }
 
     .snippet-list { display: grid; gap: 14px; }
+    .storage-split {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-top: 12px;
+    }
+    .storage-column {
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 16px;
+      padding: 12px;
+      background: linear-gradient(135deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+      min-height: 220px;
+    }
+    .storage-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+    .storage-head h3 {
+      margin: 0;
+      font-size: 1rem;
+      color: var(--text);
+    }
     .media-library {
       display: grid;
       gap: 12px;
-      margin-top: 12px;
-      padding: 12px;
-      border: 1px solid rgba(255,255,255,0.12);
-      border-radius: 16px;
-      background: linear-gradient(135deg, rgba(56,189,248,0.10), rgba(129,140,248,0.06));
     }
     .media-card {
       border: 1px solid var(--border);
@@ -710,7 +738,7 @@ Bình | editor"></textarea>
         <form id="snippetForm">
           <label>
             Tiêu đề
-            <input id="title" placeholder="Ví dụ: Hàm đăng nhập" required />
+            <input id="title" placeholder="Ví dụ: Hàm đăng nhập (không bắt buộc với video/ảnh/âm thanh)" />
           </label>
           <label>
             Nhóm
@@ -762,14 +790,22 @@ Bình | editor"></textarea>
           <h2 class="panel-title" style="margin:0;">Danh sách mã đã lưu</h2>
           <input id="searchInput" type="search" placeholder="Tìm kiếm nhanh..." />
         </div>
-        <div class="media-library">
-          <div class="meta-row" style="margin-top:0;">
-            <span class="tag">Kho media riêng</span>
-            <span>Video, ảnh và âm thanh được phát trực tiếp ở đây</span>
+        <div class="storage-split">
+          <div class="storage-column">
+            <div class="storage-head">
+              <h3>Kho lưu code</h3>
+              <span class="tag">Code</span>
+            </div>
+            <div id="snippetList" class="snippet-list"></div>
           </div>
-          <div id="mediaLibrary"></div>
+          <div class="storage-column">
+            <div class="storage-head">
+              <h3>Kho lưu media</h3>
+              <span class="tag">Video / Ảnh / Âm thanh</span>
+            </div>
+            <div id="mediaLibrary" class="media-library"></div>
+          </div>
         </div>
-        <div id="snippetList" class="snippet-list"></div>
       </section>
     </div>
   </div>
@@ -779,6 +815,8 @@ Bình | editor"></textarea>
     const AUTH_KEY = 'code-vault-auth';
     const GROUPS_KEY = 'code-vault-groups';
     const SELECTED_GROUP_KEY = 'code-vault-selected-group';
+    const GOOGLE_CLIENT_ID = 'YOUR_GOOGLE_CLIENT_ID';
+    const GOOGLE_DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive.appdata profile email';
     const form = document.getElementById('snippetForm');
     const list = document.getElementById('snippetList');
     const searchInput = document.getElementById('searchInput');
@@ -814,11 +852,18 @@ Bình | editor"></textarea>
       const element = target.nodeType === 1 ? target : target.parentElement;
       if (!element) return true;
       if (element.matches('input, textarea, pre, code, [data-copy], .allow-copy')) return true;
+      if (element.closest('input, textarea, pre, code, [data-copy], .allow-copy')) return true;
       return false;
     }
 
     document.addEventListener('selectstart', (event) => {
       if (!canCopyFromTarget(event.target)) {
+        event.preventDefault();
+      }
+    });
+
+    document.addEventListener('mousedown', (event) => {
+      if (event.button === 2 && !canCopyFromTarget(event.target)) {
         event.preventDefault();
       }
     });
@@ -835,17 +880,64 @@ Bình | editor"></textarea>
       }
     });
 
-    document.addEventListener('keydown', (event) => {
-      const isCopyShortcut = (event.ctrlKey || event.metaKey) && (event.key === 'c' || event.key === 'C');
-      if (isCopyShortcut && !canCopyFromTarget(event.target)) {
+    document.addEventListener('cut', (event) => {
+      if (!canCopyFromTarget(event.target)) {
         event.preventDefault();
       }
     });
-    let snippets = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-    let groups = JSON.parse(localStorage.getItem(GROUPS_KEY) || '[]');
+
+    document.addEventListener('keydown', (event) => {
+      const isCopyShortcut = (event.ctrlKey || event.metaKey) && (event.key === 'c' || event.key === 'C');
+      const isCutShortcut = (event.ctrlKey || event.metaKey) && (event.key === 'x' || event.key === 'X');
+      const isSelectAllShortcut = (event.ctrlKey || event.metaKey) && (event.key === 'a' || event.key === 'A');
+      if ((isCopyShortcut || isCutShortcut || isSelectAllShortcut) && !canCopyFromTarget(event.target)) {
+        event.preventDefault();
+      }
+    });
+    let snippets = [];
+    let groups = [];
     let currentUser = JSON.parse(localStorage.getItem(AUTH_KEY) || 'null');
     let selectedGroupId = localStorage.getItem(SELECTED_GROUP_KEY) || '';
     const mediaUrlCache = new Map();
+    let googleAccessToken = '';
+    let tokenClient = null;
+
+    function getAccountId(user = currentUser) {
+      return user?.email || user?.id || user?.name || 'local-user';
+    }
+
+    function getStorageKey(prefix, user = currentUser) {
+      return `${prefix}:${getAccountId(user)}`;
+    }
+
+    function loadAccountData(user = currentUser) {
+      const accountId = getAccountId(user);
+      const snippetKey = getStorageKey(STORAGE_KEY, user);
+      const groupKey = getStorageKey(GROUPS_KEY, user);
+      snippets = JSON.parse(localStorage.getItem(snippetKey) || '[]');
+      groups = JSON.parse(localStorage.getItem(groupKey) || '[]');
+      groups = groups.map(group => ({
+        id: group.id || Date.now().toString(),
+        name: group.name || 'Nhóm mới',
+        members: Array.isArray(group.members)
+          ? group.members.map(member => typeof member === 'string'
+              ? { name: member, role: 'viewer' }
+              : { name: member.name || 'Thành viên', role: member.role || 'viewer' })
+          : []
+      }));
+      if (!snippets.length && localStorage.getItem(STORAGE_KEY)) {
+        snippets = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+      }
+      if (!groups.length && localStorage.getItem(GROUPS_KEY)) {
+        groups = JSON.parse(localStorage.getItem(GROUPS_KEY) || '[]');
+      }
+      if (accountId !== 'local-user') {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(snippets));
+        localStorage.setItem(GROUPS_KEY, JSON.stringify(groups));
+      }
+    }
+
+    loadAccountData(currentUser);
 
     groups = groups.map(group => ({
       id: group.id || Date.now().toString(),
@@ -951,22 +1043,59 @@ Bình | editor"></textarea>
       return url;
     }
 
+    async function syncToGoogleDrive() {
+      if (!currentUser || !googleAccessToken || !GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID.includes('YOUR_')) return;
+      try {
+        const payload = {
+          accountId: getAccountId(currentUser),
+          snippets,
+          groups
+        };
+        const metadata = {
+          name: 'code-vault-data.json',
+          parents: ['appDataFolder'],
+          mimeType: 'application/json'
+        };
+        const formData = new FormData();
+        formData.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+        formData.append('file', new Blob([JSON.stringify(payload)], { type: 'application/json' }));
+        await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${googleAccessToken}` },
+          body: formData
+        });
+      } catch (error) {
+        console.warn('Không thể đồng bộ dữ liệu lên Google Drive.', error);
+      }
+    }
+
     function saveSnippets() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(snippets));
+      localStorage.setItem(getStorageKey(STORAGE_KEY), JSON.stringify(snippets));
+      if (currentUser && googleAccessToken) {
+        syncToGoogleDrive();
+      }
     }
 
     function saveGroups() {
-      localStorage.setItem(GROUPS_KEY, JSON.stringify(groups));
+      localStorage.setItem(getStorageKey(GROUPS_KEY), JSON.stringify(groups));
+      if (currentUser && googleAccessToken) {
+        syncToGoogleDrive();
+      }
     }
 
-    function saveAuthState(user) {
+    async function saveAuthState(user) {
       currentUser = user;
       localStorage.setItem(AUTH_KEY, JSON.stringify(user));
+      loadAccountData(user);
       renderAuthUI();
+      if (currentUser && googleAccessToken) {
+        await syncToGoogleDrive();
+      }
     }
 
     function clearAuthState() {
       currentUser = null;
+      googleAccessToken = '';
       localStorage.removeItem(AUTH_KEY);
       renderAuthUI();
     }
@@ -981,7 +1110,7 @@ Bình | editor"></textarea>
       if (saveBtn) saveBtn.disabled = !isLoggedIn;
 
       if (currentUser) {
-        authTitle.textContent = 'Tài khoản';
+        authTitle.textContent = 'Tài khoản Google';
         authIntro.hidden = true;
         loginToggleBtn.hidden = true;
         authButtons.hidden = true;
@@ -992,7 +1121,7 @@ Bình | editor"></textarea>
         accountPanel.innerHTML = `
           <strong>${escapeHtml(currentUser.name)}</strong>
           <span>${escapeHtml(currentUser.email || '')}</span>
-          <span>Đăng nhập bằng Google</span>
+          <span>Đăng nhập bằng Google thật</span>
           <button type="button" data-logout="true" style="margin-top:4px; background:#111827;">Đăng xuất</button>
         `;
         saveBtn.disabled = false;
@@ -1002,7 +1131,7 @@ Bình | editor"></textarea>
         loginToggleBtn.hidden = false;
         authButtons.hidden = true;
         authStatus.hidden = false;
-        authStatus.innerHTML = 'Vui lòng đăng nhập bằng Google để bắt đầu lưu mã.';
+        authStatus.innerHTML = 'Đăng nhập Google thật để lưu dữ liệu vào tài khoản của bạn.';
         accountToggleBtn.hidden = true;
         accountPanel.hidden = true;
         accountPanel.innerHTML = '';
@@ -1010,15 +1139,79 @@ Bình | editor"></textarea>
       }
     }
 
-    function startLogin(provider) {
-      const displayName = prompt('Bạn đang dùng chế độ demo cho Google. Nhập tên hiển thị của bạn:');
-      if (!displayName) return;
-
-      saveAuthState({
-        provider,
-        name: displayName.trim(),
-        email: `${displayName.trim().toLowerCase().replace(/\s+/g, '.')}@${provider}.demo`
+    function loadGoogleScript() {
+      return new Promise((resolve, reject) => {
+        if (window.google?.accounts?.oauth2) {
+          resolve();
+          return;
+        }
+        const existing = document.querySelector('script[src="https://accounts.google.com/gsi/client"]');
+        if (existing) {
+          existing.addEventListener('load', resolve, { once: true });
+          existing.addEventListener('error', reject, { once: true });
+          return;
+        }
+        const script = document.createElement('script');
+        script.src = 'https://accounts.google.com/gsi/client';
+        script.async = true;
+        script.defer = true;
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
       });
+    }
+
+    async function initializeGoogleAuth() {
+      if (tokenClient) return true;
+      if (!GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID.includes('YOUR_')) {
+        alert('Vui lòng thay GOOGLE_CLIENT_ID bằng Client ID Google thật của bạn trước khi đăng nhập.');
+        return false;
+      }
+      try {
+        await loadGoogleScript();
+        if (!window.google?.accounts?.oauth2) {
+          throw new Error('Google auth SDK chưa sẵn sàng.');
+        }
+        tokenClient = window.google.accounts.oauth2.initTokenClient({
+          client_id: GOOGLE_CLIENT_ID,
+          scope: GOOGLE_DRIVE_SCOPE,
+          callback: async (response) => {
+            if (response.error) {
+              authStatus.hidden = false;
+              authStatus.innerHTML = 'Đăng nhập Google thất bại.';
+              return;
+            }
+            googleAccessToken = response.access_token;
+            const userResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
+              headers: { Authorization: `Bearer ${googleAccessToken}` }
+            });
+            const userInfo = await userResponse.json();
+            await saveAuthState({
+              provider: 'google',
+              name: userInfo.name || userInfo.given_name || 'Google user',
+              email: userInfo.email || `${userInfo.id}@google.local`,
+              id: userInfo.id,
+              picture: userInfo.picture || ''
+            });
+          }
+        });
+        return true;
+      } catch (error) {
+        console.error(error);
+        alert('Không thể khởi tạo đăng nhập Google. Hãy kiểm tra Client ID.');
+        return false;
+      }
+    }
+
+    async function startLogin(provider) {
+      if (provider === 'google') {
+        const ready = await initializeGoogleAuth();
+        if (!ready || !tokenClient) return;
+        tokenClient.requestAccessToken({ prompt: 'consent' });
+        return;
+      }
+
+      alert('Chỉ hỗ trợ đăng nhập Google thật trong phiên bản này.');
     }
 
     function renderGroupSelect() {
@@ -1242,7 +1435,8 @@ Bình | editor"></textarea>
     }
 
     async function renderMediaLibrary() {
-      const mediaItems = snippets.filter(item => ['video', 'image', 'audio'].includes(item.type));
+      const term = searchInput.value.trim().toLowerCase();
+      const mediaItems = snippets.filter(item => ['video', 'image', 'audio'].includes(item.type) && `${item.title} ${item.category} ${item.language} ${item.notes} ${item.owner || ''} ${item.mediaFileName || ''}`.toLowerCase().includes(term));
       if (!mediaItems.length) {
         mediaLibrary.innerHTML = '<div class="empty-state">Chưa có media nào được lưu trên web.</div>';
         return;
@@ -1281,6 +1475,7 @@ Bình | editor"></textarea>
     async function renderSnippets() {
       const term = searchInput.value.trim().toLowerCase();
       const filtered = snippets.filter(item => {
+        if (['video', 'image', 'audio'].includes(item.type)) return false;
         const haystack = `${item.title} ${item.category} ${item.language} ${item.notes} ${item.owner || ''} ${item.mediaFileName || ''} ${item.mediaId || ''}`.toLowerCase();
         return haystack.includes(term);
       });
@@ -1339,7 +1534,10 @@ Bình | editor"></textarea>
       const selectedType = contentType.value;
       const isMedia = ['video', 'image', 'audio'].includes(selectedType);
 
-      if (!title) return;
+      if (!title && !isMedia) {
+        alert('Vui lòng nhập tiêu đề cho nội dung mã.');
+        return;
+      }
 
       let mediaId = '';
       let mediaFileName = '';
@@ -1367,7 +1565,7 @@ Bình | editor"></textarea>
 
       const newSnippet = {
         id: Date.now().toString(),
-        title,
+        title: title || (selectedType === 'video' ? 'Video' : selectedType === 'image' ? 'Hình ảnh' : selectedType === 'audio' ? 'Âm thanh' : title),
         category: document.getElementById('category').value,
         language: isMedia ? (selectedType === 'image' ? 'Image' : selectedType === 'audio' ? 'Audio' : 'Video') : language,
         notes,
