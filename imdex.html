@@ -1,0 +1,1184 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Code Vault - Kho lưu trữ mã code</title>
+  <style>
+    :root {
+      --bg: #07111f;
+      --panel: #0f172a;
+      --panel-2: #111c31;
+      --text: #f8fafc;
+      --muted: #cbd5e1;
+      --accent: #38bdf8;
+      --accent-2: #818cf8;
+      --danger: #fb7185;
+      --border: rgba(255,255,255,0.09);
+      --hero-glow: rgba(56,189,248,0.16);
+      --hero-glow-2: rgba(129,140,248,0.20);
+      --code-bg: #020617;
+      --shadow: rgba(0,0,0,0.25);
+      --soft-text: #e2e8f0;
+      --soft-muted: #94a3b8;
+      --button-text: #ffffff;
+      --button-text-contrast: #0f172a;
+    }
+
+    body.light-theme {
+      --bg: #f5f7ff;
+      --panel: #ffffff;
+      --panel-2: #eef2ff;
+      --text: #0f172a;
+      --muted: #334155;
+      --accent: #2563eb;
+      --accent-2: #7c3aed;
+      --danger: #dc2626;
+      --border: rgba(15,23,42,0.10);
+      --hero-glow: rgba(37,99,235,0.12);
+      --hero-glow-2: rgba(124,58,237,0.12);
+      --code-bg: #f8fafc;
+      --shadow: rgba(15,23,42,0.10);
+      --soft-text: #0f172a;
+      --soft-muted: #475569;
+      --button-text: #ffffff;
+      --button-text-contrast: #0f172a;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    .low-power {
+      --shadow: rgba(0,0,0,0.18);
+    }
+
+    .low-power body::before,
+    .low-power body::after {
+      display: none !important;
+    }
+
+    .low-power .hero,
+    .low-power .auth-card,
+    .low-power .card,
+    .low-power .group-item,
+    .low-power .group-storage,
+    .low-power .snippet-item,
+    .low-power .empty-state,
+    .low-power .quick-nav button,
+    .low-power input,
+    .low-power select,
+    .low-power textarea,
+    .low-power button {
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+      box-shadow: none !important;
+    }
+
+    .low-power * {
+      animation: none !important;
+      transition-duration: 0.15s !important;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Roboto, Arial, sans-serif;
+      background: linear-gradient(135deg, var(--bg), color-mix(in srgb, var(--bg) 80%, #111827));
+      color: var(--text);
+      min-height: 100vh;
+      position: relative;
+      overflow-x: hidden;
+      transition: background 0.45s ease, color 0.35s ease;
+      font-weight: 500;
+      letter-spacing: 0.2px;
+    }
+
+    body::before,
+    body::after {
+      content: "";
+      position: fixed;
+      z-index: 0;
+      border-radius: 50%;
+      filter: blur(70px);
+      opacity: 0.35;
+      pointer-events: none;
+      animation: float 12s ease-in-out infinite alternate;
+    }
+
+    body::before {
+      width: 280px;
+      height: 280px;
+      background: var(--accent);
+      top: -80px;
+      left: -80px;
+    }
+
+    body::after {
+      width: 320px;
+      height: 320px;
+      background: var(--accent-2);
+      right: -120px;
+      bottom: -100px;
+      animation-delay: 2s;
+    }
+
+    @keyframes float {
+      from { transform: translateY(0px) scale(1); }
+      to { transform: translateY(18px) scale(1.08); }
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px;
+      position: relative;
+      z-index: 1;
+    }
+
+    @media (max-width: 640px) {
+      .container {
+        padding: 16px;
+      }
+    }
+
+    .hero {
+      background: linear-gradient(130deg, rgba(255,255,255,0.16), rgba(255,255,255,0.06));
+      border: 1px solid rgba(255,255,255,0.24);
+      border-radius: 26px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 24px 50px var(--shadow), inset 0 1px 0 rgba(255,255,255,0.24);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .hero-grid {
+      display: flex;
+      justify-content: space-between;
+      gap: 18px;
+      flex-wrap: wrap;
+      align-items: flex-start;
+    }
+
+    @media (max-width: 640px) {
+      .hero-grid {
+        flex-direction: column;
+      }
+    }
+
+    .hero h1 { margin: 0 0 8px; font-size: 2rem; font-weight: 700; color: var(--text); letter-spacing: 0.02em; }
+    .hero p { margin: 0; color: var(--text); max-width: 760px; line-height: 1.7; font-weight: 500; padding: 0.2rem 0; }
+
+    .auth-card {
+      min-width: 300px;
+      width: 100%;
+      max-width: 360px;
+      background: linear-gradient(135deg, rgba(255,255,255,0.16), rgba(255,255,255,0.07));
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 16px;
+      padding: 14px;
+      backdrop-filter: blur(18px) saturate(170%);
+      -webkit-backdrop-filter: blur(18px) saturate(170%);
+      box-shadow: 0 14px 32px var(--shadow), inset 0 1px 0 rgba(255,255,255,0.18);
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    @media (max-width: 640px) {
+      .auth-card {
+        min-width: unset;
+        max-width: none;
+      }
+    }
+
+    .auth-card h3 { margin: 0 0 8px; font-size: 1rem; font-weight: 700; color: var(--text); letter-spacing: 0.01em; }
+    .auth-card p { margin: 0 0 10px; color: var(--text); font-size: 0.92rem; font-weight: 500; line-height: 1.6; padding: 0.15rem 0; }
+    .auth-buttons { display: grid; gap: 8px; margin-top: 8px; }
+    .account-btn {
+      width: 100%;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.18);
+      background: rgba(255,255,255,0.12);
+      color: var(--text);
+      padding: 10px 12px;
+      font: inherit;
+      cursor: pointer;
+      text-align: center;
+      margin-top: 6px;
+    }
+    .account-panel {
+      margin-top: 10px;
+      padding: 12px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.10);
+      border: 1px solid rgba(255,255,255,0.16);
+      color: var(--text);
+      display: grid;
+      gap: 8px;
+    }
+    .provider-btn {
+      width: 100%;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      color: var(--text);
+      padding: 10px 12px;
+      font: inherit;
+      cursor: pointer;
+      text-align: center;
+      transition: transform 0.2s ease;
+    }
+    .provider-btn:hover { transform: translateY(-1px); }
+    .google-btn { background: linear-gradient(135deg, #2563eb, #3b82f6); }
+    .github-btn { background: #111827; }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 20px;
+    }
+
+    @media (max-width: 900px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .card {
+      background: linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.05));
+      border: 1px solid rgba(255,255,255,0.18);
+      border-radius: 20px;
+      padding: 18px;
+      box-shadow: 0 16px 36px var(--shadow), inset 0 1px 0 rgba(255,255,255,0.18);
+      backdrop-filter: blur(18px) saturate(170%);
+      -webkit-backdrop-filter: blur(18px) saturate(170%);
+      transition: transform 0.25s ease, box-shadow 0.3s ease, border-color 0.25s ease;
+    }
+
+    .group-panel,
+    #snippet-form-card,
+    #snippet-list-card {
+      scroll-margin-top: 90px;
+    }
+
+    .panel-title {
+      font-size: 1rem;
+      font-weight: 700;
+      margin: 0 0 12px;
+      color: var(--text);
+      letter-spacing: 0.01em;
+    }
+
+    form { display: grid; gap: 10px; }
+    label { font-size: 0.92rem; color: var(--text); display: grid; gap: 6px; font-weight: 600; line-height: 1.5; }
+    input, select, textarea, button {
+      width: 100%;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.16);
+      background: linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.06));
+      color: var(--text);
+      padding: 10px 12px;
+      font: inherit;
+      backdrop-filter: blur(14px) saturate(160%);
+      -webkit-backdrop-filter: blur(14px) saturate(160%);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.16);
+      transition: transform 0.2s ease, box-shadow 0.25s ease, border-color 0.25s ease, background 0.25s ease;
+    }
+
+    textarea { min-height: 110px; resize: vertical; font-family: Consolas, monospace; }
+    button {
+      cursor: pointer;
+      font-weight: 600;
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.25s ease;
+    }
+    button::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(120deg, rgba(255,255,255,0.24), transparent 45%, rgba(255,255,255,0.08));
+      transform: translateX(-120%);
+      transition: transform 0.55s ease;
+      pointer-events: none;
+    }
+    button:hover {
+      transform: translateY(-1px) scale(1.01);
+      box-shadow: 0 12px 24px rgba(15,23,42,0.14);
+    }
+    button:hover::before { transform: translateX(120%); }
+    input:focus, select:focus, textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(56,189,248,0.16), inset 0 1px 0 rgba(255,255,255,0.18);
+    }
+    .primary-btn { background: linear-gradient(135deg, var(--accent), var(--accent-2)); color: var(--button-text); }
+    .secondary-btn { background: transparent; color: var(--text); }
+    .danger-btn { background: rgba(251,113,133,0.16); color: var(--danger); }
+    button:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    .notice {
+      margin-top: 10px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: rgba(56,189,248,0.14);
+      color: var(--soft-text);
+      font-size: 0.92rem;
+    }
+
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+    }
+
+    .toolbar input {
+      max-width: 260px;
+      width: 100%;
+    }
+
+    @media (max-width: 640px) {
+      .toolbar {
+        flex-direction: column;
+        align-items: stretch;
+      }
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 28px 16px;
+      color: var(--text);
+      border: 1px dashed var(--border);
+      border-radius: 14px;
+    }
+
+    .snippet-list { display: grid; gap: 14px; }
+    .snippet-item {
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 14px;
+      background: rgba(255,255,255,0.02);
+    }
+
+    .snippet-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+
+    .snippet-title {
+      font-weight: 700;
+      font-size: 1rem;
+      margin: 0;
+      color: var(--text);
+    }
+
+    .meta-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 8px;
+      color: var(--text);
+      font-size: 0.88rem;
+    }
+
+    .tag {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: rgba(56,189,248,0.16);
+      color: var(--soft-text);
+      font-size: 0.8rem;
+    }
+
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px;
+      overflow-x: auto;
+      margin: 10px 0 0;
+      font-size: 0.92rem;
+      line-height: 1.55;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+
+    .group-panel { margin-bottom: 20px; }
+    .group-list { display: grid; gap: 10px; margin-top: 12px; }
+    .group-item {
+      border: 1px solid rgba(255,255,255,0.16);
+      border-radius: 14px;
+      padding: 12px;
+      background: linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.05));
+      backdrop-filter: blur(14px) saturate(160%);
+      -webkit-backdrop-filter: blur(14px) saturate(160%);
+      box-shadow: 0 10px 24px var(--shadow), inset 0 1px 0 rgba(255,255,255,0.16);
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+    .theme-toggle {
+      margin-top: 10px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.18);
+      background: rgba(255,255,255,0.12);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+
+    body.light-theme .theme-toggle,
+    body.light-theme .account-btn,
+    body.light-theme .provider-btn,
+    body.light-theme .secondary-btn {
+      color: var(--button-text-contrast);
+      text-shadow: 0 0 0.5px rgba(0,0,0,0.12);
+    }
+
+    body:not(.light-theme) .theme-toggle,
+    body:not(.light-theme) .account-btn,
+    body:not(.light-theme) .provider-btn,
+    body:not(.light-theme) .secondary-btn {
+      color: var(--text);
+      text-shadow: 0 0 0.5px rgba(255,255,255,0.15);
+    }
+
+    body.light-theme .danger-btn {
+      color: var(--danger);
+    }
+
+    .quick-nav {
+      position: fixed;
+      right: 16px;
+      bottom: 16px;
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .quick-nav button {
+      width: 48px;
+      height: 48px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.22);
+      background: linear-gradient(135deg, rgba(255,255,255,0.18), rgba(255,255,255,0.08));
+      color: var(--text);
+      box-shadow: 0 12px 24px var(--shadow);
+      backdrop-filter: blur(16px) saturate(180%);
+      -webkit-backdrop-filter: blur(16px) saturate(180%);
+      font-size: 1rem;
+      padding: 0;
+      display: grid;
+      place-items: center;
+    }
+
+    .quick-nav button:hover {
+      transform: translateY(-2px) scale(1.03);
+    }
+
+    @media (max-width: 640px) {
+      .quick-nav {
+        right: 12px;
+        bottom: 12px;
+      }
+    }
+    .group-item h3 { margin: 0 0 6px; font-size: 1rem; font-weight: 700; color: var(--text); letter-spacing: 0.01em; }
+    .group-item p { margin: 0 0 8px; color: var(--text); font-size: 0.9rem; font-weight: 500; line-height: 1.6; }
+    .group-members { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 10px; }
+    .group-members span {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: rgba(129,140,248,0.16);
+      color: var(--soft-text);
+      font-size: 0.78rem;
+    }
+    .group-storage {
+      margin-top: 12px;
+      border: 1px solid rgba(255,255,255,0.16);
+      border-radius: 16px;
+      padding: 12px;
+      background: linear-gradient(135deg, rgba(56,189,248,0.16), rgba(129,140,248,0.10));
+      backdrop-filter: blur(16px) saturate(170%);
+      -webkit-backdrop-filter: blur(16px) saturate(170%);
+      box-shadow: 0 12px 26px var(--shadow), inset 0 1px 0 rgba(255,255,255,0.18);
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+    .group-storage-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 10px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+
+    @media (max-width: 640px) {
+      .group-storage-head {
+        flex-direction: column;
+      }
+    }
+    .member-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      padding: 6px 0;
+      border-top: 1px solid rgba(255,255,255,0.06);
+    }
+    .member-actions {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .member-row:first-child { border-top: none; }
+    .role-badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      text-transform: capitalize;
+      background: rgba(56,189,248,0.16);
+      color: var(--text);
+    }
+    .role-badge.admin { background: rgba(244,114,182,0.16); color: var(--soft-text); }
+    .role-badge.editor { background: rgba(34,197,94,0.16); color: var(--soft-text); }
+    .role-badge.viewer { background: rgba(148,163,184,0.16); color: var(--soft-text); }
+
+    .hero:hover,
+    .auth-card:hover,
+    .card:hover,
+    .group-item:hover,
+    .group-storage:hover,
+    .snippet-item:hover,
+    .empty-state:hover {
+      transform: translateY(-2px) scale(1.01);
+      box-shadow: 0 18px 40px var(--shadow), inset 0 1px 0 rgba(255,255,255,0.22);
+    }
+
+    @media (max-width: 640px) {
+      .hero,
+      .card,
+      .group-item,
+      .group-storage,
+      .snippet-item {
+        border-radius: 16px;
+      }
+
+      .hero {
+        padding: 18px;
+      }
+
+      .card {
+        padding: 14px;
+      }
+
+      .snippet-head,
+      .member-row {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .actions {
+        width: 100%;
+      }
+
+      .actions button {
+        flex: 1;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="quick-nav" aria-label="Điều hướng nhanh">
+    <button type="button" data-scroll="group-panel" title="Quản lý nhóm">👥</button>
+    <button type="button" data-scroll="snippet-form-card" title="Thêm mã">📝</button>
+    <button type="button" data-scroll="snippet-list-card" title="Danh sách mã">📚</button>
+  </div>
+
+  <div class="container">
+    <section class="hero">
+      <div class="hero-grid">
+        <div>
+          <h1>Code Vault</h1>
+          <p>Trang web này giúp bạn lưu trữ các đoạn mã theo nhóm, ngôn ngữ và mục đích sử dụng một cách rõ ràng, tiện theo dõi và tìm lại sau này.</p>
+        </div>
+        <div class="auth-card">
+          <h3 id="authTitle">Đăng nhập tài khoản</h3>
+          <p id="authIntro">Nhấn nút bên dưới để chọn Google hoặc GitHub.</p>
+          <button type="button" id="loginToggleBtn" class="account-btn">🔐 Đăng nhập</button>
+          <div id="authButtons" class="auth-buttons" hidden>
+            <button type="button" class="provider-btn google-btn" data-provider="google">Đăng nhập Google</button>
+            <button type="button" class="provider-btn github-btn" data-provider="github">Đăng nhập GitHub</button>
+          </div>
+          <div id="authStatus" class="notice"></div>
+          <button type="button" id="accountToggleBtn" class="account-btn" hidden>👤 Tài khoản của tôi</button>
+          <div id="accountPanel" class="account-panel" hidden></div>
+          <button type="button" id="themeToggle" class="theme-toggle">🌙 Chế độ tối</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card group-panel" id="group-panel">
+      <h2 class="panel-title">Quản lý nhóm</h2>
+      <form id="groupForm">
+        <label>
+          Tên nhóm
+          <input id="groupName" placeholder="Ví dụ: Nhóm Frontend" required />
+        </label>
+        <label>
+          Thành viên trong nhóm
+          <textarea id="groupMembers" placeholder="Mỗi dòng: Tên | vai trò (admin/editor/viewer)
+Ví dụ: An | admin
+Bình | editor"></textarea>
+        </label>
+        <button class="primary-btn" type="submit">Tạo nhóm</button>
+      </form>
+      <div id="groupList" class="group-list"></div>
+      <div id="groupStorage" class="group-storage" hidden></div>
+    </section>
+
+    <div class="layout">
+      <section class="card" id="snippet-form-card">
+        <h2 class="panel-title">Thêm đoạn mã mới</h2>
+        <form id="snippetForm">
+          <label>
+            Tiêu đề
+            <input id="title" placeholder="Ví dụ: Hàm đăng nhập" required />
+          </label>
+          <label>
+            Nhóm
+            <select id="category">
+              <option value="Frontend">Frontend</option>
+              <option value="Backend">Backend</option>
+              <option value="Database">Database</option>
+              <option value="Automation">Automation</option>
+              <option value="Khác">Khác</option>
+            </select>
+          </label>
+          <label>
+            Ngôn ngữ
+            <input id="language" placeholder="HTML, JS, Python..." required />
+          </label>
+          <label>
+            Chọn nhóm lưu trữ
+            <select id="snippetGroupSelect">
+              <option value="">Không gắn nhóm</option>
+            </select>
+          </label>
+          <label>
+            Ghi chú
+            <textarea id="notes" placeholder="Mô tả mục đích hoặc cách dùng..."></textarea>
+          </label>
+          <label>
+            Mã code
+            <textarea id="code" placeholder="Dán đoạn mã vào đây..." required></textarea>
+          </label>
+          <button id="saveBtn" class="primary-btn" type="submit" disabled>Lưu đoạn mã</button>
+        </form>
+      </section>
+
+      <section class="card" id="snippet-list-card">
+        <div class="toolbar">
+          <h2 class="panel-title" style="margin:0;">Danh sách mã đã lưu</h2>
+          <input id="searchInput" type="search" placeholder="Tìm kiếm nhanh..." />
+        </div>
+        <div id="snippetList" class="snippet-list"></div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'code-vault-snippets';
+    const AUTH_KEY = 'code-vault-auth';
+    const GROUPS_KEY = 'code-vault-groups';
+    const SELECTED_GROUP_KEY = 'code-vault-selected-group';
+    const form = document.getElementById('snippetForm');
+    const list = document.getElementById('snippetList');
+    const searchInput = document.getElementById('searchInput');
+    const authStatus = document.getElementById('authStatus');
+    const authTitle = document.getElementById('authTitle');
+    const authIntro = document.getElementById('authIntro');
+    const loginToggleBtn = document.getElementById('loginToggleBtn');
+    const authButtons = document.getElementById('authButtons');
+    const accountToggleBtn = document.getElementById('accountToggleBtn');
+    const accountPanel = document.getElementById('accountPanel');
+    const saveBtn = document.getElementById('saveBtn');
+    const themeToggle = document.getElementById('themeToggle');
+    const groupForm = document.getElementById('groupForm');
+    const groupList = document.getElementById('groupList');
+    const groupStorage = document.getElementById('groupStorage');
+    const snippetGroupSelect = document.getElementById('snippetGroupSelect');
+
+    const THEME_KEY = 'code-vault-theme';
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const isLowPowerDevice = (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4) ||
+      (navigator.deviceMemory && navigator.deviceMemory <= 4);
+    const isLowPowerMode = reduceMotion || isLowPowerDevice;
+    let snippets = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    let groups = JSON.parse(localStorage.getItem(GROUPS_KEY) || '[]');
+    let currentUser = JSON.parse(localStorage.getItem(AUTH_KEY) || 'null');
+    let selectedGroupId = localStorage.getItem(SELECTED_GROUP_KEY) || '';
+    let currentTheme = localStorage.getItem(THEME_KEY) || 'dark';
+
+    groups = groups.map(group => ({
+      id: group.id || Date.now().toString(),
+      name: group.name || 'Nhóm mới',
+      members: Array.isArray(group.members)
+        ? group.members.map(member => typeof member === 'string'
+            ? { name: member, role: 'viewer' }
+            : { name: member.name || 'Thành viên', role: member.role || 'viewer' })
+        : []
+    }));
+
+    function escapeHtml(value) {
+      return String(value)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function saveSnippets() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(snippets));
+    }
+
+    function saveGroups() {
+      localStorage.setItem(GROUPS_KEY, JSON.stringify(groups));
+    }
+
+    function saveAuthState(user) {
+      currentUser = user;
+      localStorage.setItem(AUTH_KEY, JSON.stringify(user));
+      renderAuthUI();
+    }
+
+    function applyTheme(theme) {
+      currentTheme = theme;
+      localStorage.setItem(THEME_KEY, theme);
+      document.body.classList.toggle('light-theme', theme === 'light');
+      document.body.classList.toggle('low-power', isLowPowerMode);
+      themeToggle.textContent = theme === 'light' ? '☀️ Chế độ sáng' : '🌙 Chế độ tối';
+    }
+
+    function clearAuthState() {
+      currentUser = null;
+      localStorage.removeItem(AUTH_KEY);
+      renderAuthUI();
+    }
+
+    function renderAuthUI() {
+      if (currentUser) {
+        authTitle.textContent = 'Tài khoản';
+        authIntro.hidden = true;
+        loginToggleBtn.hidden = true;
+        authButtons.hidden = true;
+        authStatus.hidden = true;
+        accountToggleBtn.hidden = false;
+        accountPanel.hidden = true;
+        accountToggleBtn.textContent = `👤 ${escapeHtml(currentUser.name)}`;
+        accountPanel.innerHTML = `
+          <strong>${escapeHtml(currentUser.name)}</strong>
+          <span>${escapeHtml(currentUser.email || '')}</span>
+          <span>Đăng nhập bằng ${escapeHtml(currentUser.provider === 'google' ? 'Google' : 'GitHub')}</span>
+          <button type="button" data-logout="true" style="margin-top:4px; background:#111827;">Đăng xuất</button>
+        `;
+        saveBtn.disabled = false;
+      } else {
+        authTitle.textContent = 'Đăng nhập tài khoản';
+        authIntro.hidden = false;
+        loginToggleBtn.hidden = false;
+        authButtons.hidden = true;
+        authStatus.hidden = false;
+        authStatus.innerHTML = 'Vui lòng đăng nhập bằng Google hoặc GitHub để bắt đầu lưu mã.';
+        accountToggleBtn.hidden = true;
+        accountPanel.hidden = true;
+        accountPanel.innerHTML = '';
+        saveBtn.disabled = true;
+      }
+    }
+
+    function startLogin(provider) {
+      const displayName = prompt(`Bạn đang dùng chế độ demo cho ${provider === 'google' ? 'Google' : 'GitHub'}. Nhập tên hiển thị của bạn:`);
+      if (!displayName) return;
+
+      saveAuthState({
+        provider,
+        name: displayName.trim(),
+        email: `${displayName.trim().toLowerCase().replace(/\s+/g, '.')}@${provider}.demo`
+      });
+    }
+
+    function renderGroupSelect() {
+      const selectedValue = snippetGroupSelect.value;
+      snippetGroupSelect.innerHTML = '<option value="">Không gắn nhóm</option>';
+      groups.forEach(group => {
+        const option = document.createElement('option');
+        option.value = group.id;
+        option.textContent = group.name;
+        snippetGroupSelect.appendChild(option);
+      });
+      if (groups.some(group => group.id === selectedValue)) {
+        snippetGroupSelect.value = selectedValue;
+      }
+    }
+
+    function parseGroupMembers(inputText) {
+      const lines = inputText
+        .split(/\n|,/)
+        .map(item => item.trim())
+        .filter(Boolean);
+
+      const parsed = lines.map(line => {
+        const pipeIndex = line.indexOf('|');
+        const colonIndex = line.indexOf(':');
+        const separatorIndex = pipeIndex >= 0 ? pipeIndex : (colonIndex >= 0 ? colonIndex : -1);
+
+        if (separatorIndex >= 0) {
+          const name = line.slice(0, separatorIndex).trim();
+          const role = line.slice(separatorIndex + 1).trim().toLowerCase();
+          return { name, role: ['admin', 'deputy', 'editor', 'viewer'].includes(role) ? role : 'viewer' };
+        }
+
+        return { name: line, role: 'viewer' };
+      }).filter(member => member.name);
+
+      if (currentUser && !parsed.some(member => member.name.toLowerCase() === currentUser.name.toLowerCase())) {
+        parsed.unshift({ name: currentUser.name, role: 'admin' });
+      }
+
+      return parsed;
+    }
+
+    function getUserRoleForGroup(group) {
+      if (!currentUser) return 'viewer';
+      const match = (group.members || []).find(member => {
+        const normalizedName = member.name.toLowerCase();
+        const normalizedCurrent = currentUser.name.toLowerCase();
+        const normalizedEmail = (currentUser.email || '').split('@')[0].toLowerCase();
+        return normalizedName === normalizedCurrent || normalizedName === normalizedEmail;
+      });
+      return match ? match.role : 'viewer';
+    }
+
+    function canUserModifyGroup(group) {
+      return ['admin', 'editor', 'deputy'].includes(getUserRoleForGroup(group));
+    }
+
+    function renderGroups() {
+      if (!groups.length) {
+        groupList.innerHTML = '<div class="empty-state">Chưa có nhóm nào. Hãy tạo nhóm đầu tiên.</div>';
+        return;
+      }
+
+      groupList.innerHTML = groups.map(group => {
+        const userRole = getUserRoleForGroup(group);
+        return `
+          <article class="group-item">
+            <h3>${escapeHtml(group.name)}</h3>
+            <p>${escapeHtml((group.members || []).map(member => `${member.name} (${member.role})`).join(', ') || 'Chưa có thành viên')}</p>
+            <div class="group-members">
+              ${(group.members || []).map(member => `<span class="role-badge ${member.role}">${escapeHtml(member.name)} · ${escapeHtml(member.role)}</span>`).join('')}
+            </div>
+            <div class="meta-row">
+              <span>Vai trò của bạn: ${escapeHtml(userRole)}</span>
+            </div>
+            <button class="primary-btn" type="button" data-open-group="${group.id}">Vào trang lưu nhóm</button>
+          </article>
+        `;
+      }).join('');
+    }
+
+    function renderGroupStorage() {
+      if (!selectedGroupId) {
+        groupStorage.hidden = true;
+        groupStorage.innerHTML = '';
+        return;
+      }
+
+      const group = groups.find(item => item.id === selectedGroupId);
+      if (!group) {
+        selectedGroupId = '';
+        localStorage.removeItem(SELECTED_GROUP_KEY);
+        groupStorage.hidden = true;
+        groupStorage.innerHTML = '';
+        return;
+      }
+
+      const groupSnippets = snippets.filter(item => item.groupId === selectedGroupId);
+      const userRole = getUserRoleForGroup(group);
+      const canManageMembers = ['admin', 'deputy'].includes(userRole);
+      groupStorage.hidden = false;
+      groupStorage.innerHTML = `
+        <div class="group-storage-head">
+          <div>
+            <h3 style="margin:0;">${escapeHtml(group.name)}</h3>
+            <p style="margin:6px 0 0; color:var(--text);">Vai trò của bạn: ${escapeHtml(userRole)}</p>
+          </div>
+          <button class="secondary-btn" type="button" data-clear-group="true">Quay lại</button>
+        </div>
+        <div style="margin:10px 0 12px;">
+          ${(group.members || []).map(member => `
+            <div class="member-row">
+              <span>${escapeHtml(member.name)}</span>
+              <div class="member-actions">
+                <span class="role-badge ${member.role}">${escapeHtml(member.role)}</span>
+                ${canManageMembers && member.name !== currentUser?.name ? `<button class="danger-btn" type="button" data-kick-member="${escapeHtml(member.name)}">Kick</button>` : ''}
+              </div>
+            </div>
+          `).join('')}
+        </div>
+        ${groupSnippets.length ? groupSnippets.map(item => `
+          <article class="snippet-item" style="margin-top:10px;">
+            <div class="snippet-head">
+              <div>
+                <h3 class="snippet-title">${escapeHtml(item.title)}</h3>
+                <div class="meta-row">
+                  <span class="tag">${escapeHtml(item.category)}</span>
+                  <span>${escapeHtml(item.language)}</span>
+                </div>
+              </div>
+            </div>
+            <pre>${escapeHtml(item.code)}</pre>
+          </article>
+        `).join('') : '<div class="empty-state">Nhóm này chưa có đoạn mã nào.</div>'}
+      `;
+    }
+
+    function renderSnippets() {
+      const term = searchInput.value.trim().toLowerCase();
+      const filtered = snippets.filter(item => {
+        const haystack = `${item.title} ${item.category} ${item.language} ${item.notes} ${item.owner || ''}`.toLowerCase();
+        return haystack.includes(term);
+      });
+
+      if (!filtered.length) {
+        list.innerHTML = '<div class="empty-state">Chưa có đoạn mã nào phù hợp. Hãy thêm mã đầu tiên của bạn.</div>';
+        return;
+      }
+
+      list.innerHTML = filtered.map(item => `
+        <article class="snippet-item">
+          <div class="snippet-head">
+            <div>
+              <h3 class="snippet-title">${escapeHtml(item.title)}</h3>
+              <div class="meta-row">
+                <span class="tag">${escapeHtml(item.category)}</span>
+                <span>${escapeHtml(item.language)}</span>
+              </div>
+            </div>
+            <button class="danger-btn" data-delete="${item.id}">Xóa</button>
+          </div>
+          ${item.notes ? `<p style="margin:8px 0 0; color:var(--text);">${escapeHtml(item.notes)}</p>` : ''}
+          <div class="meta-row">
+            <span>Người lưu: ${escapeHtml(item.owner || 'Khách')}</span>
+          </div>
+          <pre>${escapeHtml(item.code)}</pre>
+          <div class="actions">
+            <button class="secondary-btn" data-copy="${item.id}">Sao chép</button>
+          </div>
+        </article>
+      `).join('');
+    }
+
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      if (!currentUser) {
+        alert('Vui lòng đăng nhập bằng Google hoặc GitHub trước khi lưu đoạn mã.');
+        return;
+      }
+
+      const selectedGroupIdValue = snippetGroupSelect.value;
+      if (selectedGroupIdValue) {
+        const group = groups.find(item => item.id === selectedGroupIdValue);
+        if (!group || !canUserModifyGroup(group)) {
+          alert('Bạn chỉ có thể lưu mã vào nhóm khi có vai trò admin hoặc editor.');
+          return;
+        }
+      }
+
+      const newSnippet = {
+        id: Date.now().toString(),
+        title: document.getElementById('title').value.trim(),
+        category: document.getElementById('category').value,
+        language: document.getElementById('language').value.trim(),
+        notes: document.getElementById('notes').value.trim(),
+        code: document.getElementById('code').value.trim(),
+        owner: currentUser.name,
+        groupId: selectedGroupIdValue || ''
+      };
+
+      if (!newSnippet.title || !newSnippet.language || !newSnippet.code) return;
+
+      snippets.unshift(newSnippet);
+      saveSnippets();
+      form.reset();
+      renderSnippets();
+      renderGroupStorage();
+    });
+
+    groupForm.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const groupName = document.getElementById('groupName').value.trim();
+      const membersText = document.getElementById('groupMembers').value;
+      const members = parseGroupMembers(membersText);
+
+      if (!groupName) return;
+
+      const newGroup = {
+        id: Date.now().toString(),
+        name: groupName,
+        members
+      };
+
+      groups.unshift(newGroup);
+      selectedGroupId = newGroup.id;
+      saveGroups();
+      localStorage.setItem(SELECTED_GROUP_KEY, selectedGroupId);
+      groupForm.reset();
+      renderGroups();
+      renderGroupSelect();
+      renderGroupStorage();
+    });
+
+    searchInput.addEventListener('input', renderSnippets);
+
+    themeToggle.addEventListener('click', () => {
+      applyTheme(currentTheme === 'light' ? 'dark' : 'light');
+    });
+
+    loginToggleBtn.addEventListener('click', () => {
+      if (currentUser) return;
+      authButtons.hidden = !authButtons.hidden;
+      authStatus.innerHTML = authButtons.hidden
+        ? 'Vui lòng đăng nhập bằng Google hoặc GitHub để bắt đầu lưu mã.'
+        : 'Chọn nhà cung cấp để tiếp tục.';
+    });
+
+    document.querySelectorAll('[data-provider]').forEach(button => {
+      button.addEventListener('click', () => startLogin(button.getAttribute('data-provider')));
+    });
+
+    document.querySelectorAll('[data-scroll]').forEach(button => {
+      button.addEventListener('click', () => {
+        const targetId = button.getAttribute('data-scroll');
+        const target = document.getElementById(targetId);
+        if (target) {
+          target.scrollIntoView({ behavior: isLowPowerMode ? 'auto' : 'smooth', block: 'start' });
+        }
+      });
+    });
+
+    accountToggleBtn.addEventListener('click', () => {
+      const isHidden = accountPanel.hidden;
+      accountPanel.hidden = !isHidden;
+      if (!isHidden) {
+        accountPanel.innerHTML = `
+          <strong>${escapeHtml(currentUser.name)}</strong>
+          <span>${escapeHtml(currentUser.email || '')}</span>
+          <span>Đăng nhập bằng ${escapeHtml(currentUser.provider === 'google' ? 'Google' : 'GitHub')}</span>
+          <button type="button" data-logout="true" style="margin-top:4px; background:#111827;">Đăng xuất</button>
+        `;
+      }
+    });
+
+    accountPanel.addEventListener('click', (event) => {
+      if (event.target.getAttribute('data-logout') === 'true') {
+        clearAuthState();
+      }
+    });
+
+    groupList.addEventListener('click', (event) => {
+      const openButton = event.target.closest('[data-open-group]');
+      if (!openButton) return;
+      selectedGroupId = openButton.getAttribute('data-open-group');
+      localStorage.setItem(SELECTED_GROUP_KEY, selectedGroupId);
+      renderGroupStorage();
+    });
+
+    groupStorage.addEventListener('click', (event) => {
+      if (event.target.getAttribute('data-clear-group') === 'true') {
+        selectedGroupId = '';
+        localStorage.removeItem(SELECTED_GROUP_KEY);
+        renderGroupStorage();
+      }
+
+      const kickButton = event.target.closest('[data-kick-member]');
+      if (kickButton) {
+        const memberName = kickButton.getAttribute('data-kick-member');
+        const group = groups.find(item => item.id === selectedGroupId);
+        if (!group) return;
+
+        const userRole = getUserRoleForGroup(group);
+        if (!['admin', 'deputy'].includes(userRole)) {
+          alert('Chỉ trưởng nhóm hoặc phó nhóm mới có quyền kick thành viên.');
+          return;
+        }
+
+        group.members = (group.members || []).filter(member => member.name !== memberName);
+        saveGroups();
+        renderGroups();
+        renderGroupStorage();
+      }
+    });
+
+    list.addEventListener('click', async (event) => {
+      const deleteButton = event.target.closest('[data-delete]');
+      const copyButton = event.target.closest('[data-copy]');
+
+      if (deleteButton) {
+        const id = deleteButton.getAttribute('data-delete');
+        snippets = snippets.filter(item => item.id !== id);
+        saveSnippets();
+        renderSnippets();
+        renderGroupStorage();
+      }
+
+      if (copyButton) {
+        const id = copyButton.getAttribute('data-copy');
+        const item = snippets.find(entry => entry.id === id);
+        if (item) {
+          try {
+            await navigator.clipboard.writeText(item.code);
+            copyButton.textContent = 'Đã sao chép';
+            setTimeout(() => { copyButton.textContent = 'Sao chép'; }, 1200);
+          } catch {
+            copyButton.textContent = 'Không thể sao chép';
+          }
+        }
+      }
+    });
+
+    applyTheme(currentTheme);
+    renderAuthUI();
+    renderGroups();
+    renderGroupSelect();
+    renderGroupStorage();
+    renderSnippets();
+  </script>
+</body>
+</html>
