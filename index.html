@@ -778,7 +778,7 @@ Bình | editor"></textarea>
     <div class="layout">
       <section class="card" id="snippet-form-card">
         <h2 class="panel-title">Thêm đoạn mã mới</h2>
-        <div class="command-hint">Lệnh độc quyền: /n — mở nhanh khu vực thêm nội dung mới. /c — đóng toàn bộ web.</div>
+        <div class="command-hint">Lệnh độc quyền: /n — mở nhanh khu vực thêm nội dung mới. /c — đóng toàn bộ web. /m — mở lại web sau khi đóng. /j — kick thành viên khỏi nhóm hiện tại. /a — thêm thành viên vào nhóm hiện tại.</div>
         <div class="command-panel">
           <label style="margin:0;">Nhập lệnh</label>
           <input id="commandInput" placeholder="Ví dụ: /n hoặc /c" />
@@ -945,11 +945,11 @@ Bình | editor"></textarea>
       const rawCommand = (commandInput.value || '').trim().toLowerCase();
       if (!rawCommand) return;
       const normalized = rawCommand.startsWith('/') ? rawCommand.slice(1) : rawCommand;
-      if (normalized === 'n' || normalized === 'c') {
+      if (normalized === 'n' || normalized === 'c' || normalized === 'm' || normalized === 'j' || normalized === 'a') {
         runExclusiveCommand(normalized);
       } else {
         if (commandHint) {
-          commandHint.textContent = 'Lệnh không hợp lệ. Chỉ hỗ trợ /n hoặc /c.';
+          commandHint.textContent = 'Lệnh không hợp lệ. Chỉ hỗ trợ /n, /c, /m, /j hoặc /a.';
         }
       }
       commandInput.value = '';
@@ -987,6 +987,27 @@ Bình | editor"></textarea>
         event.preventDefault();
         pendingSlashCommand = false;
         runExclusiveCommand('c');
+        return;
+      }
+
+      if (pendingSlashCommand && event.key.toLowerCase() === 'm') {
+        event.preventDefault();
+        pendingSlashCommand = false;
+        runExclusiveCommand('m');
+        return;
+      }
+
+      if (pendingSlashCommand && event.key.toLowerCase() === 'j') {
+        event.preventDefault();
+        pendingSlashCommand = false;
+        runExclusiveCommand('j');
+        return;
+      }
+
+      if (pendingSlashCommand && event.key.toLowerCase() === 'a') {
+        event.preventDefault();
+        pendingSlashCommand = false;
+        runExclusiveCommand('a');
         return;
       }
 
@@ -1101,6 +1122,92 @@ Bình | editor"></textarea>
         }
         if (commandHint) {
           commandHint.textContent = 'Đã kích hoạt lệnh /c — web đã được đóng.';
+        }
+      }
+
+      if (command === 'm') {
+        const container = document.querySelector('.container');
+        if (container) {
+          container.style.display = 'block';
+        }
+        if (commandOverlay) {
+          commandOverlay.classList.remove('active');
+        }
+        if (commandHint) {
+          commandHint.textContent = 'Đã kích hoạt lệnh /m — web đã được mở lại.';
+        }
+      }
+
+      if (command === 'j') {
+        if (!selectedGroupId) {
+          if (commandHint) {
+            commandHint.textContent = 'Không có nhóm nào được chọn để kick thành viên.';
+          }
+          return;
+        }
+        const group = groups.find(item => item.id === selectedGroupId);
+        if (!group) {
+          if (commandHint) {
+            commandHint.textContent = 'Không tìm thấy nhóm hiện tại.';
+          }
+          return;
+        }
+        const userRole = getUserRoleForGroup(group);
+        if (!['admin', 'deputy'].includes(userRole)) {
+          if (commandHint) {
+            commandHint.textContent = 'Chỉ trưởng nhóm hoặc phó nhóm mới có thể kick thành viên.';
+          }
+          return;
+        }
+        const targetMember = (group.members || []).find(member => member.name !== currentUser?.name);
+        if (!targetMember) {
+          if (commandHint) {
+            commandHint.textContent = 'Không còn thành viên nào để kick.';
+          }
+          return;
+        }
+        group.members = (group.members || []).filter(member => member.name !== targetMember.name);
+        saveGroups();
+        renderGroups();
+        renderGroupStorage();
+        if (commandHint) {
+          commandHint.textContent = `Đã kick ${targetMember.name} khỏi nhóm hiện tại.`;
+        }
+      }
+
+      if (command === 'a') {
+        if (!selectedGroupId) {
+          if (commandHint) {
+            commandHint.textContent = 'Không có nhóm nào được chọn để thêm thành viên.';
+          }
+          return;
+        }
+        const group = groups.find(item => item.id === selectedGroupId);
+        if (!group) {
+          if (commandHint) {
+            commandHint.textContent = 'Không tìm thấy nhóm hiện tại.';
+          }
+          return;
+        }
+        const userRole = getUserRoleForGroup(group);
+        if (!['admin', 'deputy'].includes(userRole)) {
+          if (commandHint) {
+            commandHint.textContent = 'Chỉ trưởng nhóm hoặc phó nhóm mới có thể thêm thành viên.';
+          }
+          return;
+        }
+        const memberName = prompt('Nhập tên thành viên mới:');
+        if (!memberName) return;
+        const role = prompt('Nhập vai trò (admin, deputy, editor, viewer):', 'viewer');
+        const normalizedRole = ['admin', 'deputy', 'editor', 'viewer'].includes((role || 'viewer').toLowerCase())
+          ? (role || 'viewer').toLowerCase()
+          : 'viewer';
+        group.members = [...(group.members || []), { name: memberName.trim(), role: normalizedRole }];
+        saveGroups();
+        renderGroups();
+        renderGroupStorage();
+        if (commandHint) {
+          commandHint.textContent = `Đã thêm ${memberName.trim()} vào nhóm hiện tại.`;
         }
       }
     }
