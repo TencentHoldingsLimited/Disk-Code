@@ -80,6 +80,18 @@
       transition: background 0.45s ease, color 0.35s ease;
       font-weight: 500;
       letter-spacing: 0.2px;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+      -webkit-touch-callout: none;
+    }
+
+    input, textarea, pre, code, [data-copy], .allow-copy {
+      -webkit-user-select: text;
+      -moz-user-select: text;
+      -ms-user-select: text;
+      user-select: text;
     }
 
     body::before,
@@ -386,6 +398,34 @@
     }
 
     .snippet-list { display: grid; gap: 14px; }
+    .media-library {
+      display: grid;
+      gap: 12px;
+      margin-top: 12px;
+      padding: 12px;
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 16px;
+      background: linear-gradient(135deg, rgba(56,189,248,0.10), rgba(129,140,248,0.06));
+    }
+    .media-card {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 12px;
+      background: rgba(255,255,255,0.04);
+      display: grid;
+      gap: 10px;
+    }
+    .media-card video,
+    .media-card audio,
+    .media-card img {
+      width: 100%;
+      border-radius: 12px;
+      background: #000;
+      max-height: 320px;
+    }
+    .media-card img {
+      object-fit: cover;
+    }
     .snippet-item {
       position: relative;
       overflow: hidden;
@@ -722,6 +762,13 @@ Bình | editor"></textarea>
           <h2 class="panel-title" style="margin:0;">Danh sách mã đã lưu</h2>
           <input id="searchInput" type="search" placeholder="Tìm kiếm nhanh..." />
         </div>
+        <div class="media-library">
+          <div class="meta-row" style="margin-top:0;">
+            <span class="tag">Kho media riêng</span>
+            <span>Video, ảnh và âm thanh được phát trực tiếp ở đây</span>
+          </div>
+          <div id="mediaLibrary"></div>
+        </div>
         <div id="snippetList" class="snippet-list"></div>
       </section>
     </div>
@@ -750,6 +797,7 @@ Bình | editor"></textarea>
     const snippetGroupSelect = document.getElementById('snippetGroupSelect');
     const contentType = document.getElementById('contentType');
     const mediaFileInput = document.getElementById('mediaFile');
+    const mediaLibrary = document.getElementById('mediaLibrary');
     const codeLabel = document.getElementById('codeLabel');
     const mediaUrlLabel = document.getElementById('mediaUrlLabel');
 
@@ -760,6 +808,39 @@ Bình | editor"></textarea>
     const isLowPowerDevice = (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4) ||
       (navigator.deviceMemory && navigator.deviceMemory <= 4);
     const isLowPowerMode = reduceMotion || isLowPowerDevice;
+
+    function canCopyFromTarget(target) {
+      if (!target) return true;
+      const element = target.nodeType === 1 ? target : target.parentElement;
+      if (!element) return true;
+      if (element.matches('input, textarea, pre, code, [data-copy], .allow-copy')) return true;
+      return false;
+    }
+
+    document.addEventListener('selectstart', (event) => {
+      if (!canCopyFromTarget(event.target)) {
+        event.preventDefault();
+      }
+    });
+
+    document.addEventListener('contextmenu', (event) => {
+      if (!canCopyFromTarget(event.target)) {
+        event.preventDefault();
+      }
+    });
+
+    document.addEventListener('copy', (event) => {
+      if (!canCopyFromTarget(event.target)) {
+        event.preventDefault();
+      }
+    });
+
+    document.addEventListener('keydown', (event) => {
+      const isCopyShortcut = (event.ctrlKey || event.metaKey) && (event.key === 'c' || event.key === 'C');
+      if (isCopyShortcut && !canCopyFromTarget(event.target)) {
+        event.preventDefault();
+      }
+    });
     let snippets = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
     let groups = JSON.parse(localStorage.getItem(GROUPS_KEY) || '[]');
     let currentUser = JSON.parse(localStorage.getItem(AUTH_KEY) || 'null');
@@ -1104,9 +1185,15 @@ Bình | editor"></textarea>
             <span>${escapeHtml(item.language || 'Video')}</span>
           </div>
           ${item.notes ? `<p style="margin:8px 0 0; color:var(--text);">${escapeHtml(item.notes)}</p>` : ''}
-          <video controls preload="metadata" style="width:100%; margin-top:10px; border-radius:12px; background:#000;">
-            <source src="${escapeHtml(mediaUrl)}" />
-          </video>
+          <div style="margin-top:10px; padding:10px; border:1px solid var(--border); border-radius:12px; background:rgba(255,255,255,0.04);">
+            <div class="meta-row" style="margin-bottom:8px;">
+              <span class="tag">Xem ngay</span>
+              <span>Video sẽ phát trực tiếp tại đây</span>
+            </div>
+            <video controls preload="metadata" style="width:100%; border-radius:12px; background:#000;">
+              <source src="${escapeHtml(mediaUrl)}" />
+            </video>
+          </div>
         `;
       }
 
@@ -1118,7 +1205,13 @@ Bình | editor"></textarea>
             <span>${escapeHtml(item.language || 'Image')}</span>
           </div>
           ${item.notes ? `<p style="margin:8px 0 0; color:var(--text);">${escapeHtml(item.notes)}</p>` : ''}
-          <img src="${escapeHtml(mediaUrl)}" alt="${escapeHtml(item.title)}" style="width:100%; margin-top:10px; border-radius:12px; object-fit:cover; max-height:320px;" />
+          <div style="margin-top:10px; padding:10px; border:1px solid var(--border); border-radius:12px; background:rgba(255,255,255,0.04);">
+            <div class="meta-row" style="margin-bottom:8px;">
+              <span class="tag">Xem ngay</span>
+              <span>Ảnh sẽ hiện trực tiếp tại đây</span>
+            </div>
+            <img src="${escapeHtml(mediaUrl)}" alt="${escapeHtml(item.title)}" style="width:100%; border-radius:12px; object-fit:cover; max-height:320px;" />
+          </div>
         `;
       }
 
@@ -1130,9 +1223,15 @@ Bình | editor"></textarea>
             <span>${escapeHtml(item.language || 'Audio')}</span>
           </div>
           ${item.notes ? `<p style="margin:8px 0 0; color:var(--text);">${escapeHtml(item.notes)}</p>` : ''}
-          <audio controls style="width:100%; margin-top:10px;">
-            <source src="${escapeHtml(mediaUrl)}" />
-          </audio>
+          <div style="margin-top:10px; padding:10px; border:1px solid var(--border); border-radius:12px; background:rgba(255,255,255,0.04);">
+            <div class="meta-row" style="margin-bottom:8px;">
+              <span class="tag">Xem ngay</span>
+              <span>Âm thanh sẽ phát trực tiếp tại đây</span>
+            </div>
+            <audio controls style="width:100%;">
+              <source src="${escapeHtml(mediaUrl)}" />
+            </audio>
+          </div>
         `;
       }
 
@@ -1140,6 +1239,43 @@ Bình | editor"></textarea>
         ${item.notes ? `<p style="margin:8px 0 0; color:var(--text);">${escapeHtml(item.notes)}</p>` : ''}
         <pre>${escapeHtml(item.code || '')}</pre>
       `;
+    }
+
+    async function renderMediaLibrary() {
+      const mediaItems = snippets.filter(item => ['video', 'image', 'audio'].includes(item.type));
+      if (!mediaItems.length) {
+        mediaLibrary.innerHTML = '<div class="empty-state">Chưa có media nào được lưu trên web.</div>';
+        return;
+      }
+
+      const rendered = await Promise.all(mediaItems.map(async item => {
+        const mediaUrl = await getMediaUrl(item);
+        const isVideo = item.type === 'video';
+        const isAudio = item.type === 'audio';
+        const isImage = item.type === 'image';
+        const label = isVideo ? 'Video' : isImage ? 'Hình ảnh' : 'Âm thanh';
+        const preview = isVideo
+          ? `<video controls playsinline preload="metadata"><source src="${escapeHtml(mediaUrl)}" /></video>`
+          : isAudio
+            ? `<audio controls preload="metadata"><source src="${escapeHtml(mediaUrl)}" /></audio>`
+            : `<img src="${escapeHtml(mediaUrl)}" alt="${escapeHtml(item.title)}" />`;
+
+        return `
+          <article class="media-card">
+            <div class="meta-row" style="margin-top:0;">
+              <span class="tag">${escapeHtml(label)}</span>
+              <span>${escapeHtml(item.title)}</span>
+            </div>
+            ${preview}
+            ${item.notes ? `<p style="margin:0; color:var(--text);">${escapeHtml(item.notes)}</p>` : ''}
+            <div class="meta-row" style="margin-top:0;">
+              <span>Người lưu: ${escapeHtml(item.owner || 'Khách')}</span>
+            </div>
+          </article>
+        `;
+      }));
+
+      mediaLibrary.innerHTML = rendered.join('');
     }
 
     async function renderSnippets() {
@@ -1151,11 +1287,12 @@ Bình | editor"></textarea>
 
       if (!filtered.length) {
         list.innerHTML = '<div class="empty-state">Chưa có đoạn mã nào phù hợp. Hãy thêm mã đầu tiên của bạn.</div>';
+        await renderMediaLibrary();
         return;
       }
 
       const rendered = await Promise.all(filtered.map(async item => `
-        <article class="snippet-item">
+        <article class="snippet-item" data-snippet-id="${escapeHtml(item.id)}">
           <div class="snippet-head">
             <div>
               <h3 class="snippet-title">${escapeHtml(item.title)}</h3>
@@ -1176,6 +1313,7 @@ Bình | editor"></textarea>
         </article>
       `));
       list.innerHTML = rendered.join('');
+      await renderMediaLibrary();
     }
 
     form.addEventListener('submit', async (event) => {
@@ -1248,6 +1386,12 @@ Bình | editor"></textarea>
       toggleContentTypeFields();
       await renderSnippets();
       await renderGroupStorage();
+      requestAnimationFrame(() => {
+        const target = document.querySelector(`[data-snippet-id="${escapeHtml(newSnippet.id)}"]`);
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+      });
     });
 
     groupForm.addEventListener('submit', (event) => {
