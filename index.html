@@ -25,26 +25,6 @@
       --button-text-contrast: #0f172a;
     }
 
-    body.light-theme {
-      --bg: #f5f7ff;
-      --panel: #ffffff;
-      --panel-2: #eef2ff;
-      --text: #0f172a;
-      --muted: #334155;
-      --accent: #2563eb;
-      --accent-2: #7c3aed;
-      --danger: #dc2626;
-      --border: rgba(15,23,42,0.10);
-      --hero-glow: rgba(37,99,235,0.12);
-      --hero-glow-2: rgba(124,58,237,0.12);
-      --code-bg: #f8fafc;
-      --shadow: rgba(15,23,42,0.10);
-      --soft-text: #0f172a;
-      --soft-muted: #475569;
-      --button-text: #ffffff;
-      --button-text-contrast: #0f172a;
-    }
-
     html { scroll-behavior: smooth; }
 
     .low-power {
@@ -151,6 +131,8 @@
     }
 
     .hero {
+      position: relative;
+      overflow: hidden;
       background: linear-gradient(130deg, rgba(255,255,255,0.16), rgba(255,255,255,0.06));
       border: 1px solid rgba(255,255,255,0.24);
       border-radius: 26px;
@@ -160,6 +142,18 @@
       backdrop-filter: blur(24px) saturate(180%);
       -webkit-backdrop-filter: blur(24px) saturate(180%);
       transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      right: -24px;
+      bottom: -24px;
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(56,189,248,0.24), transparent 70%);
+      pointer-events: none;
     }
 
     .hero-grid {
@@ -180,6 +174,8 @@
     .hero p { margin: 0; color: var(--text); max-width: 760px; line-height: 1.7; font-weight: 500; padding: 0.2rem 0; }
 
     .auth-card {
+      position: relative;
+      overflow: hidden;
       min-width: 300px;
       width: 100%;
       max-width: 360px;
@@ -191,6 +187,14 @@
       -webkit-backdrop-filter: blur(18px) saturate(170%);
       box-shadow: 0 14px 32px var(--shadow), inset 0 1px 0 rgba(255,255,255,0.18);
       transition: transform 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    .auth-card::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(120deg, rgba(56,189,248,0.12), transparent 45%, rgba(129,140,248,0.14));
+      pointer-events: none;
     }
 
     @media (max-width: 640px) {
@@ -239,7 +243,6 @@
     }
     .provider-btn:hover { transform: translateY(-1px); }
     .google-btn { background: linear-gradient(135deg, #2563eb, #3b82f6); }
-    .github-btn { background: #111827; }
 
     .layout {
       display: grid;
@@ -271,11 +274,24 @@
     }
 
     .panel-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
       font-size: 1rem;
       font-weight: 700;
       margin: 0 0 12px;
       color: var(--text);
       letter-spacing: 0.01em;
+    }
+
+    .panel-title::before {
+      content: "";
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      box-shadow: 0 0 0 4px rgba(56,189,248,0.12);
+      flex-shrink: 0;
     }
 
     form { display: grid; gap: 10px; }
@@ -300,6 +316,11 @@
       font-weight: 600;
       position: relative;
       overflow: hidden;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      min-height: 44px;
       transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.25s ease;
     }
     button::before {
@@ -366,10 +387,23 @@
 
     .snippet-list { display: grid; gap: 14px; }
     .snippet-item {
+      position: relative;
+      overflow: hidden;
       border: 1px solid var(--border);
       border-radius: 16px;
       padding: 14px;
       background: rgba(255,255,255,0.02);
+    }
+
+    .snippet-item::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: linear-gradient(180deg, var(--accent), var(--accent-2));
+      opacity: 0.9;
     }
 
     .snippet-head {
@@ -431,42 +465,13 @@
       backdrop-filter: blur(14px) saturate(160%);
       -webkit-backdrop-filter: blur(14px) saturate(160%);
       box-shadow: 0 10px 24px var(--shadow), inset 0 1px 0 rgba(255,255,255,0.16);
-      transition: transform 0.25s ease, box-shadow 0.25s ease;
-    }
-    .theme-toggle {
-      margin-top: 10px;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 10px;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,0.18);
-      background: rgba(255,255,255,0.12);
-      color: var(--text);
-      cursor: pointer;
-      font-size: 0.9rem;
+      transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
     }
 
-    body.light-theme .theme-toggle,
-    body.light-theme .account-btn,
-    body.light-theme .provider-btn,
-    body.light-theme .secondary-btn {
-      color: var(--button-text-contrast);
-      text-shadow: 0 0 0.5px rgba(0,0,0,0.12);
+    .group-item.selected {
+      border-color: rgba(56,189,248,0.55);
+      box-shadow: 0 12px 30px rgba(56,189,248,0.16), inset 0 1px 0 rgba(255,255,255,0.18);
     }
-
-    body:not(.light-theme) .theme-toggle,
-    body:not(.light-theme) .account-btn,
-    body:not(.light-theme) .provider-btn,
-    body:not(.light-theme) .secondary-btn {
-      color: var(--text);
-      text-shadow: 0 0 0.5px rgba(255,255,255,0.15);
-    }
-
-    body.light-theme .danger-btn {
-      color: var(--danger);
-    }
-
     .quick-nav {
       position: fixed;
       right: 16px;
@@ -628,16 +633,14 @@
         </div>
         <div class="auth-card">
           <h3 id="authTitle">Đăng nhập tài khoản</h3>
-          <p id="authIntro">Nhấn nút bên dưới để chọn Google hoặc GitHub.</p>
-          <button type="button" id="loginToggleBtn" class="account-btn">🔐 Đăng nhập</button>
+          <p id="authIntro">Nhấn nút bên dưới để đăng nhập bằng Google.</p>
+          <button type="button" id="loginToggleBtn" class="account-btn">🔐 Đăng nhập Google</button>
           <div id="authButtons" class="auth-buttons" hidden>
             <button type="button" class="provider-btn google-btn" data-provider="google">Đăng nhập Google</button>
-            <button type="button" class="provider-btn github-btn" data-provider="github">Đăng nhập GitHub</button>
           </div>
           <div id="authStatus" class="notice"></div>
           <button type="button" id="accountToggleBtn" class="account-btn" hidden>👤 Tài khoản của tôi</button>
           <div id="accountPanel" class="account-panel" hidden></div>
-          <button type="button" id="themeToggle" class="theme-toggle">🌙 Chế độ tối</button>
         </div>
       </div>
     </section>
@@ -655,7 +658,7 @@
 Ví dụ: An | admin
 Bình | editor"></textarea>
         </label>
-        <button class="primary-btn" type="submit">Tạo nhóm</button>
+        <button class="primary-btn" type="submit" id="createGroupBtn">Tạo nhóm</button>
       </form>
       <div id="groupList" class="group-list"></div>
       <div id="groupStorage" class="group-storage" hidden></div>
@@ -681,7 +684,16 @@ Bình | editor"></textarea>
           </label>
           <label>
             Ngôn ngữ
-            <input id="language" placeholder="HTML, JS, Python..." required />
+            <input id="language" placeholder="HTML, JS, Python..." />
+          </label>
+          <label>
+            Loại nội dung
+            <select id="contentType">
+              <option value="code">Mã code</option>
+              <option value="video">Video</option>
+              <option value="image">Hình ảnh</option>
+              <option value="audio">Âm thanh</option>
+            </select>
           </label>
           <label>
             Chọn nhóm lưu trữ
@@ -693,9 +705,13 @@ Bình | editor"></textarea>
             Ghi chú
             <textarea id="notes" placeholder="Mô tả mục đích hoặc cách dùng..."></textarea>
           </label>
-          <label>
+          <label id="mediaUrlLabel" hidden>
+            Tệp media
+            <input id="mediaFile" type="file" accept="image/*,video/*,audio/*" />
+          </label>
+          <label id="codeLabel">
             Mã code
-            <textarea id="code" placeholder="Dán đoạn mã vào đây..." required></textarea>
+            <textarea id="code" placeholder="Dán đoạn mã vào đây..."></textarea>
           </label>
           <button id="saveBtn" class="primary-btn" type="submit" disabled>Lưu đoạn mã</button>
         </form>
@@ -727,13 +743,19 @@ Bình | editor"></textarea>
     const accountToggleBtn = document.getElementById('accountToggleBtn');
     const accountPanel = document.getElementById('accountPanel');
     const saveBtn = document.getElementById('saveBtn');
-    const themeToggle = document.getElementById('themeToggle');
+    const createGroupBtn = document.getElementById('createGroupBtn');
     const groupForm = document.getElementById('groupForm');
     const groupList = document.getElementById('groupList');
     const groupStorage = document.getElementById('groupStorage');
     const snippetGroupSelect = document.getElementById('snippetGroupSelect');
+    const contentType = document.getElementById('contentType');
+    const mediaFileInput = document.getElementById('mediaFile');
+    const codeLabel = document.getElementById('codeLabel');
+    const mediaUrlLabel = document.getElementById('mediaUrlLabel');
 
-    const THEME_KEY = 'code-vault-theme';
+    const MEDIA_DB_NAME = 'code-vault-media-db';
+    const MEDIA_STORE_NAME = 'files';
+    const MAX_MEDIA_SIZE = 20 * 1024 * 1024;
     const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const isLowPowerDevice = (navigator.hardwareConcurrency && navigator.hardwareConcurrency <= 4) ||
       (navigator.deviceMemory && navigator.deviceMemory <= 4);
@@ -742,7 +764,7 @@ Bình | editor"></textarea>
     let groups = JSON.parse(localStorage.getItem(GROUPS_KEY) || '[]');
     let currentUser = JSON.parse(localStorage.getItem(AUTH_KEY) || 'null');
     let selectedGroupId = localStorage.getItem(SELECTED_GROUP_KEY) || '';
-    let currentTheme = localStorage.getItem(THEME_KEY) || 'dark';
+    const mediaUrlCache = new Map();
 
     groups = groups.map(group => ({
       id: group.id || Date.now().toString(),
@@ -763,6 +785,91 @@ Bình | editor"></textarea>
         .replace(/'/g, '&#39;');
     }
 
+    function openMediaDb() {
+      return new Promise((resolve, reject) => {
+        const request = indexedDB.open(MEDIA_DB_NAME, 1);
+        request.onupgradeneeded = () => {
+          const db = request.result;
+          if (!db.objectStoreNames.contains(MEDIA_STORE_NAME)) {
+            db.createObjectStore(MEDIA_STORE_NAME, { keyPath: 'id' });
+          }
+        };
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+    }
+
+    function validateMediaFile(file) {
+      const allowedTypes = {
+        image: ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'],
+        video: ['video/mp4', 'video/webm', 'video/ogg'],
+        audio: ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/ogg', 'audio/webm']
+      };
+      const expected = contentType.value;
+      const allowed = allowedTypes[expected] || [];
+      if (!allowed.length) return { valid: true };
+      if (file.size > MAX_MEDIA_SIZE) {
+        return { valid: false, message: `Tệp quá lớn. Vui lòng chọn tệp nhỏ hơn ${MAX_MEDIA_SIZE / (1024 * 1024)}MB.` };
+      }
+      if (!allowed.includes(file.type) && !file.type.startsWith('image/') && !file.type.startsWith('video/') && !file.type.startsWith('audio/')) {
+        return { valid: false, message: 'Định dạng tệp không được hỗ trợ.' };
+      }
+      return { valid: true };
+    }
+
+    async function saveMediaFile(id, file) {
+      const validation = validateMediaFile(file);
+      if (!validation.valid) {
+        throw new Error(validation.message);
+      }
+      const db = await openMediaDb();
+      return new Promise((resolve, reject) => {
+        const transaction = db.transaction(MEDIA_STORE_NAME, 'readwrite');
+        const store = transaction.objectStore(MEDIA_STORE_NAME);
+        const request = store.put({ id, fileName: file.name, mimeType: file.type, blob: file });
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+        transaction.oncomplete = () => db.close();
+        transaction.onerror = () => {
+          db.close();
+          reject(transaction.error);
+        };
+      });
+    }
+
+    async function getMediaFile(id) {
+      const db = await openMediaDb();
+      return new Promise((resolve, reject) => {
+        const transaction = db.transaction(MEDIA_STORE_NAME, 'readonly');
+        const store = transaction.objectStore(MEDIA_STORE_NAME);
+        const request = store.get(id);
+        request.onsuccess = () => {
+          const value = request.result;
+          db.close();
+          resolve(value ? value.blob : null);
+        };
+        request.onerror = () => {
+          db.close();
+          reject(request.error);
+        };
+      });
+    }
+
+    async function getMediaUrl(item) {
+      if (!item || !['video', 'image', 'audio'].includes(item.type)) return '';
+      if (item.mediaUrl && item.mediaUrl.startsWith('blob:')) return item.mediaUrl;
+      if (item.mediaUrl && /^https?:\/\//.test(item.mediaUrl)) return item.mediaUrl;
+      if (!item.mediaId) return '';
+      const cached = mediaUrlCache.get(item.mediaId);
+      if (cached) return cached;
+      const blob = await getMediaFile(item.mediaId);
+      if (!blob) return '';
+      const url = URL.createObjectURL(blob);
+      mediaUrlCache.set(item.mediaId, url);
+      item.mediaUrl = url;
+      return url;
+    }
+
     function saveSnippets() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(snippets));
     }
@@ -777,14 +884,6 @@ Bình | editor"></textarea>
       renderAuthUI();
     }
 
-    function applyTheme(theme) {
-      currentTheme = theme;
-      localStorage.setItem(THEME_KEY, theme);
-      document.body.classList.toggle('light-theme', theme === 'light');
-      document.body.classList.toggle('low-power', isLowPowerMode);
-      themeToggle.textContent = theme === 'light' ? '☀️ Chế độ sáng' : '🌙 Chế độ tối';
-    }
-
     function clearAuthState() {
       currentUser = null;
       localStorage.removeItem(AUTH_KEY);
@@ -792,6 +891,14 @@ Bình | editor"></textarea>
     }
 
     function renderAuthUI() {
+      const isLoggedIn = !!currentUser;
+      const formInputs = [document.getElementById('title'), document.getElementById('category'), document.getElementById('language'), document.getElementById('contentType'), document.getElementById('snippetGroupSelect'), document.getElementById('notes'), document.getElementById('code'), document.getElementById('mediaFile'), document.getElementById('groupName'), document.getElementById('groupMembers')];
+      formInputs.forEach(input => {
+        if (input) input.disabled = !isLoggedIn;
+      });
+      if (createGroupBtn) createGroupBtn.disabled = !isLoggedIn;
+      if (saveBtn) saveBtn.disabled = !isLoggedIn;
+
       if (currentUser) {
         authTitle.textContent = 'Tài khoản';
         authIntro.hidden = true;
@@ -804,7 +911,7 @@ Bình | editor"></textarea>
         accountPanel.innerHTML = `
           <strong>${escapeHtml(currentUser.name)}</strong>
           <span>${escapeHtml(currentUser.email || '')}</span>
-          <span>Đăng nhập bằng ${escapeHtml(currentUser.provider === 'google' ? 'Google' : 'GitHub')}</span>
+          <span>Đăng nhập bằng Google</span>
           <button type="button" data-logout="true" style="margin-top:4px; background:#111827;">Đăng xuất</button>
         `;
         saveBtn.disabled = false;
@@ -814,7 +921,7 @@ Bình | editor"></textarea>
         loginToggleBtn.hidden = false;
         authButtons.hidden = true;
         authStatus.hidden = false;
-        authStatus.innerHTML = 'Vui lòng đăng nhập bằng Google hoặc GitHub để bắt đầu lưu mã.';
+        authStatus.innerHTML = 'Vui lòng đăng nhập bằng Google để bắt đầu lưu mã.';
         accountToggleBtn.hidden = true;
         accountPanel.hidden = true;
         accountPanel.innerHTML = '';
@@ -823,7 +930,7 @@ Bình | editor"></textarea>
     }
 
     function startLogin(provider) {
-      const displayName = prompt(`Bạn đang dùng chế độ demo cho ${provider === 'google' ? 'Google' : 'GitHub'}. Nhập tên hiển thị của bạn:`);
+      const displayName = prompt('Bạn đang dùng chế độ demo cho Google. Nhập tên hiển thị của bạn:');
       if (!displayName) return;
 
       saveAuthState({
@@ -897,8 +1004,9 @@ Bình | editor"></textarea>
 
       groupList.innerHTML = groups.map(group => {
         const userRole = getUserRoleForGroup(group);
+        const isSelected = group.id === selectedGroupId;
         return `
-          <article class="group-item">
+          <article class="group-item${isSelected ? ' selected' : ''}">
             <h3>${escapeHtml(group.name)}</h3>
             <p>${escapeHtml((group.members || []).map(member => `${member.name} (${member.role})`).join(', ') || 'Chưa có thành viên')}</p>
             <div class="group-members">
@@ -913,7 +1021,7 @@ Bình | editor"></textarea>
       }).join('');
     }
 
-    function renderGroupStorage() {
+    async function renderGroupStorage() {
       if (!selectedGroupId) {
         groupStorage.hidden = true;
         groupStorage.innerHTML = '';
@@ -933,6 +1041,22 @@ Bình | editor"></textarea>
       const userRole = getUserRoleForGroup(group);
       const canManageMembers = ['admin', 'deputy'].includes(userRole);
       groupStorage.hidden = false;
+      const snippetHtml = groupSnippets.length
+        ? (await Promise.all(groupSnippets.map(async item => `
+            <article class="snippet-item" style="margin-top:10px;">
+              <div class="snippet-head">
+                <div>
+                  <h3 class="snippet-title">${escapeHtml(item.title)}</h3>
+                  <div class="meta-row">
+                    <span class="tag">${escapeHtml(item.category)}</span>
+                    <span>${escapeHtml(item.language || (item.type === 'video' ? 'Video' : item.type === 'image' ? 'Hình ảnh' : item.type === 'audio' ? 'Âm thanh' : 'Mã'))}</span>
+                  </div>
+                </div>
+              </div>
+              ${await renderSnippetMedia(item)}
+            </article>
+          `))).join('')
+        : '<div class="empty-state">Nhóm này chưa có đoạn mã nào.</div>';
       groupStorage.innerHTML = `
         <div class="group-storage-head">
           <div>
@@ -952,27 +1076,76 @@ Bình | editor"></textarea>
             </div>
           `).join('')}
         </div>
-        ${groupSnippets.length ? groupSnippets.map(item => `
-          <article class="snippet-item" style="margin-top:10px;">
-            <div class="snippet-head">
-              <div>
-                <h3 class="snippet-title">${escapeHtml(item.title)}</h3>
-                <div class="meta-row">
-                  <span class="tag">${escapeHtml(item.category)}</span>
-                  <span>${escapeHtml(item.language)}</span>
-                </div>
-              </div>
-            </div>
-            <pre>${escapeHtml(item.code)}</pre>
-          </article>
-        `).join('') : '<div class="empty-state">Nhóm này chưa có đoạn mã nào.</div>'}
+        ${snippetHtml}
       `;
     }
 
-    function renderSnippets() {
+    function toggleContentTypeFields() {
+      const isMedia = ['video', 'image', 'audio'].includes(contentType.value);
+      codeLabel.hidden = isMedia;
+      mediaUrlLabel.hidden = !isMedia;
+      if (mediaFileInput) {
+        if (contentType.value === 'image') mediaFileInput.accept = 'image/*';
+        else if (contentType.value === 'video') mediaFileInput.accept = 'video/*';
+        else if (contentType.value === 'audio') mediaFileInput.accept = 'audio/*';
+        else mediaFileInput.accept = '';
+      }
+      if (!isMedia) {
+        mediaFileInput.value = '';
+      }
+    }
+
+    async function renderSnippetMedia(item) {
+      if (item.type === 'video') {
+        const mediaUrl = await getMediaUrl(item);
+        return `
+          <div class="meta-row" style="margin-top: 0;">
+            <span class="tag">Video</span>
+            <span>${escapeHtml(item.language || 'Video')}</span>
+          </div>
+          ${item.notes ? `<p style="margin:8px 0 0; color:var(--text);">${escapeHtml(item.notes)}</p>` : ''}
+          <video controls preload="metadata" style="width:100%; margin-top:10px; border-radius:12px; background:#000;">
+            <source src="${escapeHtml(mediaUrl)}" />
+          </video>
+        `;
+      }
+
+      if (item.type === 'image') {
+        const mediaUrl = await getMediaUrl(item);
+        return `
+          <div class="meta-row" style="margin-top: 0;">
+            <span class="tag">Hình ảnh</span>
+            <span>${escapeHtml(item.language || 'Image')}</span>
+          </div>
+          ${item.notes ? `<p style="margin:8px 0 0; color:var(--text);">${escapeHtml(item.notes)}</p>` : ''}
+          <img src="${escapeHtml(mediaUrl)}" alt="${escapeHtml(item.title)}" style="width:100%; margin-top:10px; border-radius:12px; object-fit:cover; max-height:320px;" />
+        `;
+      }
+
+      if (item.type === 'audio') {
+        const mediaUrl = await getMediaUrl(item);
+        return `
+          <div class="meta-row" style="margin-top: 0;">
+            <span class="tag">Âm thanh</span>
+            <span>${escapeHtml(item.language || 'Audio')}</span>
+          </div>
+          ${item.notes ? `<p style="margin:8px 0 0; color:var(--text);">${escapeHtml(item.notes)}</p>` : ''}
+          <audio controls style="width:100%; margin-top:10px;">
+            <source src="${escapeHtml(mediaUrl)}" />
+          </audio>
+        `;
+      }
+
+      return `
+        ${item.notes ? `<p style="margin:8px 0 0; color:var(--text);">${escapeHtml(item.notes)}</p>` : ''}
+        <pre>${escapeHtml(item.code || '')}</pre>
+      `;
+    }
+
+    async function renderSnippets() {
       const term = searchInput.value.trim().toLowerCase();
       const filtered = snippets.filter(item => {
-        const haystack = `${item.title} ${item.category} ${item.language} ${item.notes} ${item.owner || ''}`.toLowerCase();
+        const haystack = `${item.title} ${item.category} ${item.language} ${item.notes} ${item.owner || ''} ${item.mediaFileName || ''} ${item.mediaId || ''}`.toLowerCase();
         return haystack.includes(term);
       });
 
@@ -981,34 +1154,34 @@ Bình | editor"></textarea>
         return;
       }
 
-      list.innerHTML = filtered.map(item => `
+      const rendered = await Promise.all(filtered.map(async item => `
         <article class="snippet-item">
           <div class="snippet-head">
             <div>
               <h3 class="snippet-title">${escapeHtml(item.title)}</h3>
               <div class="meta-row">
                 <span class="tag">${escapeHtml(item.category)}</span>
-                <span>${escapeHtml(item.language)}</span>
+                <span>${escapeHtml(item.language || (item.type === 'video' ? 'Video' : item.type === 'image' ? 'Hình ảnh' : item.type === 'audio' ? 'Âm thanh' : 'Mã'))}</span>
               </div>
             </div>
             <button class="danger-btn" data-delete="${item.id}">Xóa</button>
           </div>
-          ${item.notes ? `<p style="margin:8px 0 0; color:var(--text);">${escapeHtml(item.notes)}</p>` : ''}
+          ${await renderSnippetMedia(item)}
           <div class="meta-row">
             <span>Người lưu: ${escapeHtml(item.owner || 'Khách')}</span>
           </div>
-          <pre>${escapeHtml(item.code)}</pre>
           <div class="actions">
-            <button class="secondary-btn" data-copy="${item.id}">Sao chép</button>
+            ${['video', 'image', 'audio'].includes(item.type) ? '' : `<button class="secondary-btn" data-copy="${item.id}">Sao chép</button>`}
           </div>
         </article>
-      `).join('');
+      `));
+      list.innerHTML = rendered.join('');
     }
 
-    form.addEventListener('submit', (event) => {
+    form.addEventListener('submit', async (event) => {
       event.preventDefault();
       if (!currentUser) {
-        alert('Vui lòng đăng nhập bằng Google hoặc GitHub trước khi lưu đoạn mã.');
+        alert('Vui lòng đăng nhập bằng Google trước khi sử dụng tính năng này.');
         return;
       }
 
@@ -1021,28 +1194,69 @@ Bình | editor"></textarea>
         }
       }
 
+      const title = document.getElementById('title').value.trim();
+      const language = document.getElementById('language').value.trim();
+      const notes = document.getElementById('notes').value.trim();
+      const code = document.getElementById('code').value.trim();
+      const selectedType = contentType.value;
+      const isMedia = ['video', 'image', 'audio'].includes(selectedType);
+
+      if (!title) return;
+
+      let mediaId = '';
+      let mediaFileName = '';
+      let mediaMimeType = '';
+
+      if (isMedia) {
+        const file = mediaFileInput.files[0];
+        if (!file) {
+          alert('Vui lòng chọn tệp media để tải lên.');
+          return;
+        }
+        try {
+          mediaId = `media-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+          mediaFileName = file.name;
+          mediaMimeType = file.type;
+          await saveMediaFile(mediaId, file);
+        } catch (error) {
+          alert(error.message || 'Không thể lưu tệp media.');
+          return;
+        }
+      } else if (!code) {
+        alert('Vui lòng nhập mã code để lưu nội dung mã.');
+        return;
+      }
+
       const newSnippet = {
         id: Date.now().toString(),
-        title: document.getElementById('title').value.trim(),
+        title,
         category: document.getElementById('category').value,
-        language: document.getElementById('language').value.trim(),
-        notes: document.getElementById('notes').value.trim(),
-        code: document.getElementById('code').value.trim(),
+        language: isMedia ? (selectedType === 'image' ? 'Image' : selectedType === 'audio' ? 'Audio' : 'Video') : language,
+        notes,
+        code: isMedia ? '' : code,
         owner: currentUser.name,
-        groupId: selectedGroupIdValue || ''
+        groupId: selectedGroupIdValue || '',
+        type: selectedType,
+        mediaId,
+        mediaFileName,
+        mediaMimeType
       };
-
-      if (!newSnippet.title || !newSnippet.language || !newSnippet.code) return;
 
       snippets.unshift(newSnippet);
       saveSnippets();
       form.reset();
-      renderSnippets();
-      renderGroupStorage();
+      toggleContentTypeFields();
+      await renderSnippets();
+      await renderGroupStorage();
     });
 
     groupForm.addEventListener('submit', (event) => {
       event.preventDefault();
+      if (!currentUser) {
+        alert('Vui lòng đăng nhập bằng Google trước khi tạo nhóm.');
+        return;
+      }
+
       const groupName = document.getElementById('groupName').value.trim();
       const membersText = document.getElementById('groupMembers').value;
       const members = parseGroupMembers(membersText);
@@ -1066,17 +1280,14 @@ Bình | editor"></textarea>
     });
 
     searchInput.addEventListener('input', renderSnippets);
-
-    themeToggle.addEventListener('click', () => {
-      applyTheme(currentTheme === 'light' ? 'dark' : 'light');
-    });
+    contentType.addEventListener('change', toggleContentTypeFields);
 
     loginToggleBtn.addEventListener('click', () => {
       if (currentUser) return;
       authButtons.hidden = !authButtons.hidden;
       authStatus.innerHTML = authButtons.hidden
-        ? 'Vui lòng đăng nhập bằng Google hoặc GitHub để bắt đầu lưu mã.'
-        : 'Chọn nhà cung cấp để tiếp tục.';
+        ? 'Vui lòng đăng nhập bằng Google để bắt đầu lưu mã.'
+        : 'Nhấn nút để tiếp tục.';
     });
 
     document.querySelectorAll('[data-provider]').forEach(button => {
@@ -1100,7 +1311,7 @@ Bình | editor"></textarea>
         accountPanel.innerHTML = `
           <strong>${escapeHtml(currentUser.name)}</strong>
           <span>${escapeHtml(currentUser.email || '')}</span>
-          <span>Đăng nhập bằng ${escapeHtml(currentUser.provider === 'google' ? 'Google' : 'GitHub')}</span>
+          <span>Đăng nhập bằng Google</span>
           <button type="button" data-logout="true" style="margin-top:4px; background:#111827;">Đăng xuất</button>
         `;
       }
@@ -1151,6 +1362,10 @@ Bình | editor"></textarea>
       const copyButton = event.target.closest('[data-copy]');
 
       if (deleteButton) {
+        if (!currentUser) {
+          alert('Vui lòng đăng nhập bằng Google trước khi xóa nội dung.');
+          return;
+        }
         const id = deleteButton.getAttribute('data-delete');
         snippets = snippets.filter(item => item.id !== id);
         saveSnippets();
@@ -1159,6 +1374,10 @@ Bình | editor"></textarea>
       }
 
       if (copyButton) {
+        if (!currentUser) {
+          alert('Vui lòng đăng nhập bằng Google trước khi sao chép nội dung.');
+          return;
+        }
         const id = copyButton.getAttribute('data-copy');
         const item = snippets.find(entry => entry.id === id);
         if (item) {
@@ -1173,7 +1392,8 @@ Bình | editor"></textarea>
       }
     });
 
-    applyTheme(currentTheme);
+    document.body.classList.toggle('low-power', isLowPowerMode);
+    toggleContentTypeFields();
     renderAuthUI();
     renderGroups();
     renderGroupSelect();
