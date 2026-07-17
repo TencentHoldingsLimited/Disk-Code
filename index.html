@@ -1036,6 +1036,7 @@ Bình | editor"></textarea>
     const mediaUrlCache = new Map();
     let googleAccessToken = '';
     let tokenClient = null;
+    let googleDriveFileId = '';
 
     function getAccountId(user = currentUser) {
       return user?.email || user?.id || user?.name || 'local-user';
@@ -1299,6 +1300,33 @@ Bình | editor"></textarea>
       return url;
     }
 
+    async function loadDataFromGoogleDrive() {
+      if (!currentUser || !googleAccessToken || !GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID.includes('YOUR_')) return;
+      try {
+        const listResponse = await fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent("name='code-vault-data.json' and trashed=false")}&spaces=appDataFolder&fields=files(id,name)&access_token=${encodeURIComponent(googleAccessToken)}`);
+        const listData = await listResponse.json();
+        const file = listData.files?.[0];
+        if (!file) return;
+        googleDriveFileId = file.id;
+        const contentResponse = await fetch(`https://www.googleapis.com/drive/v3/files/${file.id}?alt=media`, {
+          headers: { Authorization: `Bearer ${googleAccessToken}` }
+        });
+        if (!contentResponse.ok) return;
+        const payload = await contentResponse.json();
+        if (payload?.accountId && payload.accountId !== getAccountId(currentUser)) return;
+        if (Array.isArray(payload?.snippets)) snippets = payload.snippets;
+        if (Array.isArray(payload?.groups)) groups = payload.groups;
+        localStorage.setItem(getStorageKey(STORAGE_KEY), JSON.stringify(snippets));
+        localStorage.setItem(getStorageKey(GROUPS_KEY), JSON.stringify(groups));
+        renderGroups();
+        renderGroupSelect();
+        renderGroupStorage();
+        renderSnippets();
+      } catch (error) {
+        console.warn('Không thể tải dữ liệu từ Google Drive.', error);
+      }
+    }
+
     async function syncToGoogleDrive() {
       if (!currentUser || !googleAccessToken || !GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID.includes('YOUR_')) return;
       try {
@@ -1307,19 +1335,29 @@ Bình | editor"></textarea>
           snippets,
           groups
         };
-        const metadata = {
-          name: 'code-vault-data.json',
-          parents: ['appDataFolder'],
-          mimeType: 'application/json'
-        };
-        const formData = new FormData();
-        formData.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-        formData.append('file', new Blob([JSON.stringify(payload)], { type: 'application/json' }));
-        await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id', {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${googleAccessToken}` },
-          body: formData
-        });
+        if (googleDriveFileId) {
+          await fetch(`https://www.googleapis.com/upload/drive/v3/files/${googleDriveFileId}?uploadType=media`, {
+            method: 'PATCH',
+            headers: { Authorization: `Bearer ${googleAccessToken}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+        } else {
+          const metadata = {
+            name: 'code-vault-data.json',
+            parents: ['appDataFolder'],
+            mimeType: 'application/json'
+          };
+          const formData = new FormData();
+          formData.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+          formData.append('file', new Blob([JSON.stringify(payload)], { type: 'application/json' }));
+          const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id', {
+            method: 'POST',
+            headers: { Authorization: `Bearer ${googleAccessToken}` },
+            body: formData
+          });
+          const created = await response.json();
+          googleDriveFileId = created.id || '';
+        }
       } catch (error) {
         console.warn('Không thể đồng bộ dữ liệu lên Google Drive.', error);
       }
@@ -1345,6 +1383,7 @@ Bình | editor"></textarea>
       loadAccountData(user);
       renderAuthUI();
       if (currentUser && googleAccessToken) {
+        await loadDataFromGoogleDrive();
         await syncToGoogleDrive();
       }
     }
@@ -1449,6 +1488,7 @@ Bình | editor"></textarea>
               id: userInfo.id,
               picture: userInfo.picture || ''
             });
+            await loadDataFromGoogleDrive();
           }
         });
         return true;
