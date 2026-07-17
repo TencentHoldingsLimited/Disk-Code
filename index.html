@@ -374,6 +374,42 @@
       color: var(--soft-text);
       font-size: 0.92rem;
     }
+    .command-hint {
+      margin: 8px 0 0;
+      padding: 8px 10px;
+      border-radius: 10px;
+      background: rgba(129,140,248,0.14);
+      color: var(--soft-text);
+      font-size: 0.9rem;
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+    .command-panel {
+      margin-top: 12px;
+      padding: 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.04);
+      display: grid;
+      gap: 8px;
+    }
+    .command-panel input {
+      width: 100%;
+    }
+    .command-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(2, 6, 23, 0.96);
+      color: var(--text);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      text-align: center;
+      padding: 24px;
+    }
+    .command-overlay.active {
+      display: flex;
+    }
 
     .toolbar {
       display: flex;
@@ -692,6 +728,13 @@
     <button type="button" data-scroll="snippet-list-card" title="Danh sách mã">📚</button>
   </div>
 
+  <div class="command-overlay" id="commandOverlay">
+    <div>
+      <h2 style="margin:0 0 8px; font-size: 2rem;">Web đã được đóng</h2>
+      <p style="margin:0; color:var(--soft-text);">Bạn đã kích hoạt lệnh /c. Trang sẽ được ẩn cho đến khi tải lại.</p>
+    </div>
+  </div>
+
   <div class="container">
     <section class="hero">
       <div class="hero-grid">
@@ -735,6 +778,12 @@ Bình | editor"></textarea>
     <div class="layout">
       <section class="card" id="snippet-form-card">
         <h2 class="panel-title">Thêm đoạn mã mới</h2>
+        <div class="command-hint">Lệnh độc quyền: /n — mở nhanh khu vực thêm nội dung mới. /c — đóng toàn bộ web.</div>
+        <div class="command-panel">
+          <label style="margin:0;">Nhập lệnh</label>
+          <input id="commandInput" placeholder="Ví dụ: /n hoặc /c" />
+          <button type="button" id="runCommandBtn" class="primary-btn">Thực hiện lệnh</button>
+        </div>
         <form id="snippetForm">
           <label>
             Tiêu đề
@@ -836,8 +885,14 @@ Bình | editor"></textarea>
     const contentType = document.getElementById('contentType');
     const mediaFileInput = document.getElementById('mediaFile');
     const mediaLibrary = document.getElementById('mediaLibrary');
+    const commandHint = document.querySelector('.command-hint');
+    const commandOverlay = document.getElementById('commandOverlay');
+    const commandInput = document.getElementById('commandInput');
+    const runCommandBtn = document.getElementById('runCommandBtn');
     const codeLabel = document.getElementById('codeLabel');
     const mediaUrlLabel = document.getElementById('mediaUrlLabel');
+
+    let pendingSlashCommand = false;
 
     const MEDIA_DB_NAME = 'code-vault-media-db';
     const MEDIA_STORE_NAME = 'files';
@@ -886,6 +941,28 @@ Bình | editor"></textarea>
       }
     });
 
+    function executeCommandFromInput() {
+      const rawCommand = (commandInput.value || '').trim().toLowerCase();
+      if (!rawCommand) return;
+      const normalized = rawCommand.startsWith('/') ? rawCommand.slice(1) : rawCommand;
+      if (normalized === 'n' || normalized === 'c') {
+        runExclusiveCommand(normalized);
+      } else {
+        if (commandHint) {
+          commandHint.textContent = 'Lệnh không hợp lệ. Chỉ hỗ trợ /n hoặc /c.';
+        }
+      }
+      commandInput.value = '';
+    }
+
+    runCommandBtn.addEventListener('click', executeCommandFromInput);
+    commandInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        executeCommandFromInput();
+      }
+    });
+
     document.addEventListener('keydown', (event) => {
       const isCopyShortcut = (event.ctrlKey || event.metaKey) && (event.key === 'c' || event.key === 'C');
       const isCutShortcut = (event.ctrlKey || event.metaKey) && (event.key === 'x' || event.key === 'X');
@@ -893,6 +970,27 @@ Bình | editor"></textarea>
       if ((isCopyShortcut || isCutShortcut || isSelectAllShortcut) && !canCopyFromTarget(event.target)) {
         event.preventDefault();
       }
+
+      if (event.key === '/' && !event.ctrlKey && !event.metaKey && !event.altKey) {
+        pendingSlashCommand = true;
+        return;
+      }
+
+      if (pendingSlashCommand && event.key.toLowerCase() === 'n') {
+        event.preventDefault();
+        pendingSlashCommand = false;
+        runExclusiveCommand('n');
+        return;
+      }
+
+      if (pendingSlashCommand && event.key.toLowerCase() === 'c') {
+        event.preventDefault();
+        pendingSlashCommand = false;
+        runExclusiveCommand('c');
+        return;
+      }
+
+      pendingSlashCommand = false;
     });
     let snippets = [];
     let groups = [];
@@ -970,6 +1068,41 @@ Bình | editor"></textarea>
         request.onsuccess = () => resolve(request.result);
         request.onerror = () => reject(request.error);
       });
+    }
+
+    function runExclusiveCommand(command) {
+      if (command === 'n') {
+        const formCard = document.getElementById('snippet-form-card');
+        if (formCard) {
+          formCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+        const titleInput = document.getElementById('title');
+        if (titleInput) {
+          titleInput.focus();
+          titleInput.select();
+        }
+        if (commandHint) {
+          commandHint.textContent = 'Đã kích hoạt lệnh /n — bạn có thể bắt đầu nhập nội dung mới.';
+          setTimeout(() => {
+            if (commandHint) {
+              commandHint.textContent = 'Lệnh độc quyền: /n — mở nhanh khu vực thêm nội dung mới. /c — đóng toàn bộ web.';
+            }
+          }, 1600);
+        }
+      }
+
+      if (command === 'c') {
+        if (commandOverlay) {
+          commandOverlay.classList.add('active');
+        }
+        const container = document.querySelector('.container');
+        if (container) {
+          container.style.display = 'none';
+        }
+        if (commandHint) {
+          commandHint.textContent = 'Đã kích hoạt lệnh /c — web đã được đóng.';
+        }
+      }
     }
 
     function validateMediaFile(file) {
